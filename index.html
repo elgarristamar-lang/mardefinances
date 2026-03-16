@@ -521,35 +521,81 @@ let file1Data = null, file2Data = null;
 window.evolutionChartInstance = null;
 
 // ── PARSE ──────────────────────────────────────────────────────────────────
+// Patterns that identify internal transfers between own accounts — filtered at parse time
+function isInternalTransfer(concepte, moviment) {
+  const c = concepte.toLowerCase();
+  const m = moviment.toLowerCase();
+  // "Traspàs programa" = redondeo automático entre cuentas propias
+  // "Traspàs a compte / des de compte" = movimiento manual entre propias cuentas
+  // "Liquidació d'interessos" = bank fee/interest, tiny amounts
+  if (c.startsWith("traspas") || c.startsWith("traspàs") || c.startsWith("traspas") ) return true;
+  if (c.includes("liquidaci") && c.includes("interessos")) return true;
+  if (m.includes("redondeo tarjeta")) return true;
+  if (m.includes("ahorro nomina") || m.includes("ahorro nòmina")) return true;
+  return false;
+}
+
 function parseFile(data) {
   const wb = XLSX.read(data, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+  // Find the header row (contains "Import" or "Importe")
   let headerRow = -1;
   for (let i = 0; i < rows.length; i++) {
-    if (rows[i].some(c => /^import/i.test(String(c).trim()))) { headerRow = i; break; }
+    if (rows[i].some(c => /^imports?$/i.test(String(c).trim()))) { headerRow = i; break; }
+  }
+  // Fallback: look for row with "Data" and numeric values after it
+  if (headerRow < 0) {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (r.some(c => String(c).trim().toLowerCase() === "data") &&
+          r.some(c => String(c).trim().toLowerCase() === "concepte" || String(c).trim().toLowerCase() === "concepto")) {
+        headerRow = i; break;
+      }
+    }
   }
   if (headerRow < 0) return [];
+
+  // Map column names to indices
   const hdr = rows[headerRow].map(c => String(c).trim().toLowerCase());
-  const iImport   = Math.max(hdr.findIndex(c => /^import/i.test(c)), 5);
-  const iData     = hdr.findIndex(c => c === "data" || c === "fecha") >= 0 ? hdr.findIndex(c => c === "data" || c === "fecha") : 2;
-  const iConcepte = hdr.findIndex(c => c === "concepte" || c === "concepto") >= 0 ? hdr.findIndex(c => c === "concepte" || c === "concepto") : 3;
-  const iMoviment = hdr.findIndex(c => c === "moviment" || c === "movimiento") >= 0 ? hdr.findIndex(c => c === "moviment" || c === "movimiento") : 4;
-  const iObs      = hdr.findIndex(c => c === "observacions" || c === "observaciones") >= 0 ? hdr.findIndex(c => c === "observacions" || c === "observaciones") : 9;
+  const find = (names) => { for (const n of names) { const i = hdr.indexOf(n); if (i>=0) return i; } return -1; };
+  const iData     = find(["data","fecha"]);
+  const iConcepte = find(["concepte","concepto"]);
+  const iMoviment = find(["moviment","movimiento"]);
+  const iImport   = find(["import","importe"]);
+  const iObs      = find(["observacions","observaciones"]);
+
+  // Fallback to fixed BBVA positions: col0=blank, col1=D.valor, col2=Data, col3=Concepte, col4=Moviment, col5=Import, col9=Obs
+  const CI = iImport   >= 0 ? iImport   : 5;
+  const CD = iData     >= 0 ? iData     : 2;
+  const CC = iConcepte >= 0 ? iConcepte : 3;
+  const CM = iMoviment >= 0 ? iMoviment : 4;
+  const CO = iObs      >= 0 ? iObs      : 9;
+
   const txs = [];
   for (let i = headerRow + 1; i < rows.length; i++) {
     const r = rows[i];
-    const importVal = parseFloat(String(r[iImport] ?? "").replace(",", ".").trim());
+    const importVal = parseFloat(String(r[CI] ?? "").replace(",", ".").trim());
     if (isNaN(importVal)) continue;
-    const concepte = String(r[iConcepte] ?? "").trim().toLowerCase();
+    const concepte     = String(r[CC] ?? "").trim();
+    const moviment     = String(r[CM] ?? "").trim();
+    const observacions = String(r[CO] ?? "").trim();
+    const dateStr      = String(r[CD] ?? "").trim();
     if (!concepte || concepte.length < 2) continue;
+
+    // Skip internal transfers at parse time — no encoding issues
+    if (isInternalTransfer(concepte, moviment)) continue;
+
     txs.push({
       id: i * 1000 + Math.random(),
-      date: String(r[iData] ?? "").trim(),
-      concepte,
-      moviment: String(r[iMoviment] ?? "").trim().toLowerCase(),
-      observacions: String(r[iObs] ?? "").trim().toLowerCase(),
-      import: importVal, category: null, source: "main"
+      date: dateStr,
+      concepte:     concepte.toLowerCase(),
+      moviment:     moviment.toLowerCase(),
+      observacions: observacions.toLowerCase(),
+      import: importVal,
+      category: null,
+      source: "main"
     });
   }
   return txs;
@@ -619,48 +665,31 @@ async function startAnalysis() {
     setStep(2);
     txMain.forEach(t => {
       const text = [t.concepte, t.moviment, t.observacions].join(" ");
-      // Skip internal transfers: redondeo, traspasos entre cuentas propias
-      if (
-        text.includes("traspàs programa") || text.includes("traspas programa") ||
-        text.includes("redondeo tarjeta") ||
-        text.includes("liquidació d'interessos-comissions")
-      ) {
-        t.category = "_skip";
-        return;
-      }
-      // Alquiler
-      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora") || text.includes("marc mar")) && t.import < 0) {
+      // Alquiler: transferencias a Mar elgarrista 300-400€ a principio de mes
+      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora") || text.includes("marc mar elgarrista")) && t.import < 0) {
         t.category = "Alquiler";
         return;
       }
       const c = classifyLocal(t);
       if (c) t.category = c;
     });
+    // Savings account: traspasos already filtered at parse time
+    // Only Nómina, Alquiler and other real expenses remain
     txSavings.forEach(t => {
       const text = [t.concepte, t.moviment, t.observacions].join(" ");
-      // Nómina first
-      if (text.includes("nòmina") || text.includes("nomina") || text.includes("mango mng")) {
+      if (text.includes("nomina") || text.includes("mango mng")) {
         t.category = "Nómina";
+        return;
       }
-      // Alquiler (transferencias a Mar elgarrista ~300-400€ a principio de mes)
-      else if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora")) && t.import < 0) {
+      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora")) && t.import < 0) {
         t.category = "Alquiler";
+        return;
       }
-      // Mark ALL traspasos/redondeos as hidden — internal transfers between own accounts
-      else if (
-        text.includes("traspàs programa") || text.includes("traspas programa") ||
-        text.includes("traspàs a compte") || text.includes("traspas a compte") ||
-        text.includes("traspàs des de compte") || text.includes("traspas des de compte") ||
-        text.includes("redondeo tarjeta") || text.includes("ahorro nomina") ||
-        text.includes("embargament")
-      ) {
-        t.category = "_skip";
-      }
-      else { const c = classifyLocal(t); if (c) t.category = c; }
+      const c = classifyLocal(t);
+      if (c) t.category = c;
     });
     if (apiKey) { setStep(3); await classifyWithAI([...txMain, ...txSavings].filter(t => !t.category), apiKey); }
-    // Exclude internal transfers between own accounts
-    allTx = [...txMain, ...txSavings].filter(t => t.category !== "_skip");
+    allTx = [...txMain, ...txSavings];
     pendingAsk = allTx.filter(t => (!t.category || t.category === "Otros") && Math.abs(t.import) > 3 && t.import < 0).slice(0, 8);
     document.getElementById("screen-loading").classList.add("hidden");
     showAskIfNeeded();
