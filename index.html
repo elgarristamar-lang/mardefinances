@@ -487,6 +487,7 @@ const DEFAULT_CATS = {
   "Transferencias": { color: "#475569", bg: "rgba(71,85,105,0.12)",   icon: "↔️" },
   "Ahorro":         { color: "#00d4aa", bg: "rgba(0,212,170,0.12)",   icon: "💰" },
   "Nómina":         { color: "#00d4aa", bg: "rgba(0,212,170,0.12)",   icon: "💵" },
+  "Ahorro":         { color: "#6c63ff", bg: "rgba(108,99,255,0.12)",  icon: "🏦" },
   "Otros":          { color: "#475569", bg: "rgba(71,85,105,0.12)",   icon: "❓" }
 };
 
@@ -521,17 +522,29 @@ let file1Data = null, file2Data = null;
 window.evolutionChartInstance = null;
 
 // ── PARSE ──────────────────────────────────────────────────────────────────
-// Patterns that identify internal transfers between own accounts — filtered at parse time
-function isInternalTransfer(concepte, moviment) {
+// Skip rules for MAIN account (cuenta corriente)
+function skipMain(concepte, moviment) {
   const c = concepte.toLowerCase();
   const m = moviment.toLowerCase();
-  // "Traspàs programa" = redondeo automático entre cuentas propias
-  // "Traspàs a compte / des de compte" = movimiento manual entre propias cuentas
-  // "Liquidació d'interessos" = bank fee/interest, tiny amounts
-  if (c.startsWith("traspas") || c.startsWith("traspàs") || c.startsWith("traspas") ) return true;
+  if (c.startsWith("traspas") || c.startsWith("traspàs")) return true;
   if (c.includes("liquidaci") && c.includes("interessos")) return true;
   if (m.includes("redondeo tarjeta")) return true;
-  if (m.includes("ahorro nomina") || m.includes("ahorro nòmina")) return true;
+  return false;
+}
+// Skip rules for SAVINGS account (cuenta ahorro)
+function skipSavings(concepte, moviment) {
+  const c = concepte.toLowerCase();
+  const m = moviment.toLowerCase();
+  // Skip: redondeo roundups — tiny automatic transfers
+  if (m.includes("redondeo tarjeta")) return true;
+  // Skip: "traspàs a compte" / "traspàs des de compte" = manual moves between own accounts
+  if (c.startsWith("traspas a compte") || c.startsWith("traspàs a compte")) return true;
+  if (c.startsWith("traspas des de") || c.startsWith("traspàs des de")) return true;
+  // Skip: embargaments (tax withholdings - not a real expense category)
+  if (c.includes("embargament")) return true;
+  // KEEP: "traspàs programa" with "ahorro nomina" = real savings to keep account
+  // KEEP: "abonament de nòmina" = salary
+  // KEEP: "transferència efectuada" = real payments (alquiler, seguro)
   return false;
 }
 
@@ -583,9 +596,6 @@ function parseFile(data) {
     const observacions = String(r[CO] ?? "").trim();
     const dateStr      = String(r[CD] ?? "").trim();
     if (!concepte || concepte.length < 2) continue;
-
-    // Skip internal transfers at parse time — no encoding issues
-    if (isInternalTransfer(concepte, moviment)) continue;
 
     txs.push({
       id: i * 1000 + Math.random(),
@@ -659,35 +669,67 @@ async function startAnalysis() {
   document.getElementById("screen-loading").classList.remove("hidden");
   try {
     setStep(1);
-    txMain    = file1Data ? parseFile(file1Data) : [];
-    txSavings = file2Data ? parseFile(file2Data) : [];
-    txSavings.forEach(t => { t.source = "savings"; });
+    const rawMain    = file1Data ? parseFile(file1Data) : [];
+    const rawSavings = file2Data ? parseFile(file2Data) : [];
+
     setStep(2);
+
+    // ── Main account: filter and classify ──
+    txMain = rawMain.filter(t => !skipMain(t.concepte, t.moviment));
     txMain.forEach(t => {
       const text = [t.concepte, t.moviment, t.observacions].join(" ");
-      // Alquiler: transferencias a Mar elgarrista 300-400€ a principio de mes
-      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora") || text.includes("marc mar elgarrista")) && t.import < 0) {
-        t.category = "Alquiler";
-        return;
+      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora") || text.includes("marc mar")) && t.import < 0) {
+        t.category = "Alquiler"; return;
       }
-      const c = classifyLocal(t);
-      if (c) t.category = c;
+      const c = classifyLocal(t); if (c) t.category = c;
     });
-    // Savings account: traspasos already filtered at parse time
-    // Only Nómina, Alquiler and other real expenses remain
+
+    // ── Savings account: filter and classify ──
+    txSavings = rawSavings
+      .filter(t => !skipSavings(t.concepte, t.moviment))
+      .map(t => ({ ...t, source: "savings" }));
+
     txSavings.forEach(t => {
       const text = [t.concepte, t.moviment, t.observacions].join(" ");
-      if (text.includes("nomina") || text.includes("mango mng")) {
-        t.category = "Nómina";
-        return;
+      // Nómina: salary deposit
+      if (t.concepte.includes("abonament") && text.includes("nomina")) {
+        t.category = "Nómina"; return;
       }
-      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora")) && t.import < 0) {
-        t.category = "Alquiler";
-        return;
+      if (text.includes("mango mng")) {
+        t.category = "Nómina"; return;
       }
-      const c = classifyLocal(t);
-      if (c) t.category = c;
+      // Ahorro: "traspàs programa" with "ahorro nomina" = monthly savings transfer
+      if (t.concepte.startsWith("traspas") || t.concepte.startsWith("traspàs")) {
+        if (text.includes("ahorro")) { t.category = "Ahorro"; return; }
+        // Other traspàs programa without ahorro = skip
+        t.category = "_skip"; return;
+      }
+      // Alquiler from savings: transferència efectuada to Marc/Febrer elgarrista
+      if ((text.includes("marc mar elgarrista") || text.includes("febrer mar") || text.includes("elgarrista") || text.includes("marc elgarrista")) && t.import < 0) {
+        t.category = "Alquiler"; return;
+      }
+      // Seguro from savings
+      if (text.includes("seguro") && t.import < 0) {
+        t.category = "Seguros"; return;
+      }
+      const c = classifyLocal(t); if (c) t.category = c;
     });
+
+    // Remove residual skips
+    txSavings = txSavings.filter(t => t.category !== "_skip");
+
+    // ── Nómina month shift: salary paid end of month N is income for month N+1 ──
+    txSavings.forEach(t => {
+      if (t.category === "Nómina") {
+        const p = t.date.split("/");
+        if (p.length === 3) {
+          let m = parseInt(p[1]) + 1, y = parseInt(p[2]);
+          if (m > 12) { m = 1; y++; }
+          t.displayMonth = \`\${y}-\${String(m).padStart(2,"0")}\`;
+        }
+      }
+    });
+
     if (apiKey) { setStep(3); await classifyWithAI([...txMain, ...txSavings].filter(t => !t.category), apiKey); }
     allTx = [...txMain, ...txSavings];
     pendingAsk = allTx.filter(t => (!t.category || t.category === "Otros") && Math.abs(t.import) > 3 && t.import < 0).slice(0, 8);
@@ -730,25 +772,33 @@ function assignAndContinue(id, cat) {
 // ── RENDER ─────────────────────────────────────────────────────────────────
 function renderResults() {
   document.getElementById("screen-results").classList.remove("hidden");
-  const months = [...new Set(allTx.map(t => getMonthKey(t.date)))].filter(m => m !== "unknown").sort().reverse();
+  const effMonth = (t) => t.displayMonth || getMonthKey(t.date);
+  const months = [...new Set(allTx.map(t => effMonth(t)))].filter(m => m !== "unknown").sort().reverse();
 
   const tabs = document.getElementById("monthTabs");
   tabs.innerHTML = `<button class="month-tab ${selectedMonth==="all"?"active":""}" onclick="selectMonth('all')">Todos</button>`;
   months.forEach(m => tabs.innerHTML += `<button class="month-tab ${selectedMonth===m?"active":""}" onclick="selectMonth('${m}')">${getMonthLabel(m)}</button>`);
 
-  const txs = selectedMonth === "all" ? allTx : allTx.filter(t => getMonthKey(t.date) === selectedMonth);
-  const gastos   = txs.filter(t => t.import < 0 && t.source === "main" && t.category !== "Transferencias");
-  // Ingresos = only Nómina entries from savings account
+  // For Nómina: use displayMonth (month when money is "available to spend")
+  const effectiveMonth = (t) => t.displayMonth || getMonthKey(t.date);
+  const txs = selectedMonth === "all"
+    ? allTx
+    : allTx.filter(t => effectiveMonth(t) === selectedMonth);
+
+  // Gastos: all negative from main account
+  const gastos   = txs.filter(t => t.import < 0 && t.source === "main");
+  // Ingresos: nómina, shown in the month it becomes available (displayMonth)
   const ingresos = txs.filter(t => t.category === "Nómina" && t.import > 0);
-  // Ahorro = negative savings transactions that aren't alquiler or _skip
-  const ahorro   = txs.filter(t => t.import < 0 && t.source === "savings" && t.category !== "Alquiler");
+  // Ahorro: the monthly savings transfer from savings account
+  const ahorro   = txs.filter(t => t.category === "Ahorro" && t.import < 0 && t.source === "savings");
 
   const totalGasto   = gastos.reduce((s,t) => s + Math.abs(t.import), 0);
   const totalIngreso = ingresos.reduce((s,t) => s + t.import, 0);
   const totalAhorro  = ahorro.reduce((s,t) => s + Math.abs(t.import), 0);
 
   document.getElementById("results-title").textContent = selectedMonth === "all" ? "Resumen total" : `Resumen ${getMonthLabel(selectedMonth)}`;
-  document.getElementById("results-sub").textContent = `${txs.length} transacciones · ${months.length} ${months.length===1?"mes":"meses"}`;
+  const visibleTxCount = txs.filter(t => t.category !== "Nómina" || t.import > 0).length;
+  document.getElementById("results-sub").textContent = `${visibleTxCount} transacciones · ${months.length} ${months.length===1?"mes":"meses"}`;
 
   const hasSavings = txSavings.length > 0;
   document.getElementById("statsArea").innerHTML = hasSavings
@@ -802,23 +852,24 @@ function renderResults() {
 
 // ── CHART ──────────────────────────────────────────────────────────────────
 function renderChart(months) {
-  const allMonths = [...new Set(allTx.map(t => getMonthKey(t.date)))].filter(m => m !== "unknown").sort();
+  const allMonths = [...new Set(allTx.map(t => t.displayMonth || getMonthKey(t.date)))].filter(m => m !== "unknown").sort();
   if (allMonths.length < 2) { document.getElementById("chartBlock").classList.add("hidden"); return; }
   document.getElementById("chartBlock").classList.remove("hidden");
 
   const isDark = theme === "dark";
   const labels = allMonths.map(m => getMonthLabel(m));
 
+  const effM = (t) => t.displayMonth || getMonthKey(t.date);
   const dataGastos   = allMonths.map(m => {
-    const txs = allTx.filter(t => getMonthKey(t.date) === m && t.import < 0 && t.source === "main" && t.category !== "Transferencias");
+    const txs = allTx.filter(t => effM(t) === m && t.import < 0 && t.source === "main");
     return Math.round(txs.reduce((s,t) => s + Math.abs(t.import), 0));
   });
   const dataIngresos = allMonths.map(m => {
-    const txs = allTx.filter(t => getMonthKey(t.date) === m && t.category === "Nómina" && t.import > 0);
+    const txs = allTx.filter(t => effM(t) === m && t.category === "Nómina" && t.import > 0);
     return Math.round(txs.reduce((s,t) => s + t.import, 0));
   });
   const dataAhorro   = allMonths.map(m => {
-    const txs = allTx.filter(t => getMonthKey(t.date) === m && t.import < 0 && t.source === "savings" && t.category !== "Alquiler");
+    const txs = allTx.filter(t => effM(t) === m && t.category === "Ahorro" && t.import < 0 && t.source === "savings");
     return Math.round(txs.reduce((s,t) => s + Math.abs(t.import), 0));
   });
 
