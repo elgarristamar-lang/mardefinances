@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,10 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
+    /* ── DARK THEME (default) ── */
+    [data-theme="dark"] {
       --bg: #0a0a0f;
       --surface: #13131a;
       --surface2: #1c1c26;
@@ -28,7 +30,34 @@
       --red: #ff5c7c;
       --red-bg: rgba(255,92,124,0.1);
       --yellow: #ffbb3a;
-      --yellow-bg: rgba(255,187,58,0.1);
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --chart-grid: rgba(255,255,255,0.05);
+    }
+
+    /* ── LIGHT THEME ── */
+    [data-theme="light"] {
+      --bg: #f4f4f8;
+      --surface: #ffffff;
+      --surface2: #f0f0f6;
+      --surface3: #e8e8f0;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.13);
+      --text: #0d0d1a;
+      --text2: #5a5a7a;
+      --text3: #a0a0bc;
+      --accent: #6c63ff;
+      --accent2: #5248d4;
+      --accent-bg: rgba(108,99,255,0.08);
+      --green: #00a882;
+      --green-bg: rgba(0,168,130,0.08);
+      --red: #e03460;
+      --red-bg: rgba(224,52,96,0.08);
+      --yellow: #d4900a;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+      --chart-grid: rgba(0,0,0,0.06);
+    }
+
+    :root {
       --radius: 12px;
       --radius-lg: 18px;
       --radius-xl: 24px;
@@ -42,398 +71,180 @@
       font-size: 14px;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
     }
 
-    /* Ambient glow background */
-    body::before {
+    [data-theme="dark"] body::before {
       content: '';
       position: fixed;
-      top: -30vh;
-      left: 50%;
+      top: -30vh; left: 50%;
       transform: translateX(-50%);
-      width: 80vw;
-      height: 60vh;
-      background: radial-gradient(ellipse, rgba(108,99,255,0.08) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
+      width: 80vw; height: 60vh;
+      background: radial-gradient(ellipse, rgba(108,99,255,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
     }
 
-    .container {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 2rem 1.25rem 4rem;
-      position: relative;
-      z-index: 1;
-    }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.25rem 4rem; position: relative; z-index: 1; }
 
     /* ── NAV ── */
-    .nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 3rem;
-    }
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
     .nav-logo .dot {
-      width: 28px; height: 28px;
-      border-radius: 8px;
+      width: 28px; height: 28px; border-radius: 8px;
       background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
     }
     .nav-logo span { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
     .nav-badge {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: var(--accent-bg);
-      color: var(--accent2);
-      border: 1px solid rgba(108,99,255,0.2);
-      font-weight: 500;
+      font-size: 11px; padding: 3px 10px; border-radius: 20px;
+      background: var(--accent-bg); color: var(--accent2);
+      border: 1px solid rgba(108,99,255,0.2); font-weight: 500;
     }
+    .theme-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 1px solid var(--border2); background: var(--surface);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: all 0.2s; color: var(--text);
+    }
+    .theme-btn:hover { background: var(--surface2); border-color: var(--accent); }
 
-    /* ── UPLOAD SCREEN ── */
+    /* ── UPLOAD ── */
     .upload-screen-title {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 6px;
-      background: linear-gradient(135deg, #f0f0ff 30%, var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--text) 30%, var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .upload-screen-sub {
-      font-size: 14px;
-      color: var(--text2);
-      margin-bottom: 2.5rem;
-    }
-
-    .upload-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 1.5rem;
-    }
+    .upload-screen-sub { font-size: 14px; color: var(--text2); margin-bottom: 2.5rem; }
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
     @media (max-width: 520px) { .upload-grid { grid-template-columns: 1fr; } }
 
     .upload-zone {
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      border-radius: var(--radius-lg);
-      padding: 2rem 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius-lg); padding: 2rem 1.5rem; text-align: center;
+      cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
     }
     .upload-zone::before {
-      content: '';
-      position: absolute;
-      inset: 0;
+      content: ''; position: absolute; inset: 0;
       background: linear-gradient(135deg, var(--accent-bg), transparent);
-      opacity: 0;
-      transition: opacity 0.2s;
+      opacity: 0; transition: opacity 0.2s;
     }
     .upload-zone:hover::before, .upload-zone.drag::before { opacity: 1; }
     .upload-zone:hover { border-color: var(--accent); transform: translateY(-1px); }
-    .upload-zone.drag { border-color: var(--accent); }
     .upload-zone.done { border-color: var(--green); }
     .upload-zone.done::before { background: linear-gradient(135deg, var(--green-bg), transparent); opacity: 1; }
     .upload-zone input[type=file] { display: none; }
-
-    .upload-zone .uz-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-      margin: 0 auto 14px;
-      position: relative; z-index: 1;
-      transition: background 0.2s;
+    .uz-icon {
+      width: 44px; height: 44px; border-radius: 12px; background: var(--surface2);
+      border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin: 0 auto 14px; position: relative; z-index: 1; transition: background 0.2s;
     }
     .upload-zone.done .uz-icon { background: var(--green-bg); border-color: rgba(0,212,170,0.3); }
-    .upload-zone .uz-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; position: relative; z-index: 1; }
-    .upload-zone .uz-sub { font-size: 11px; color: var(--text2); position: relative; z-index: 1; }
-    .upload-zone .uz-check {
-      position: absolute; top: 12px; right: 12px;
-      width: 20px; height: 20px;
-      border-radius: 50%;
-      background: var(--green);
-      color: #000;
-      font-size: 11px;
-      font-weight: 700;
-      display: none;
-      align-items: center; justify-content: center;
+    .uz-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; position: relative; z-index: 1; }
+    .uz-sub { font-size: 11px; color: var(--text2); position: relative; z-index: 1; }
+    .uz-check {
+      position: absolute; top: 12px; right: 12px; width: 20px; height: 20px;
+      border-radius: 50%; background: var(--green); color: #000;
+      font-size: 11px; font-weight: 700; display: none; align-items: center; justify-content: center;
     }
     .upload-zone.done .uz-check { display: flex; }
-    .upload-zone .uz-fname {
-      font-size: 10px; color: var(--green);
-      margin-top: 8px; position: relative; z-index: 1;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+    .uz-fname { font-size: 10px; color: var(--green); margin-top: 8px; position: relative; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* API KEY */
-    .api-block {
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      border-radius: var(--radius-lg);
-      padding: 16px 20px;
-      margin-bottom: 12px;
-    }
-    .api-block-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
+    .api-block { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 12px; }
+    .api-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .api-block-header span { font-size: 12px; font-weight: 500; color: var(--text2); }
     .api-block-header a { font-size: 11px; color: var(--accent2); text-decoration: none; }
-    .api-input-wrap { display: flex; gap: 8px; align-items: center; }
     .api-input-wrap input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: var(--radius);
-      padding: 9px 12px;
-      color: var(--text);
-      font-size: 12px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      outline: none;
-      transition: border-color 0.15s;
+      width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 9px 12px; color: var(--text);
+      font-size: 12px; font-family: 'SF Mono', monospace; outline: none; transition: border-color 0.15s;
     }
     .api-input-wrap input:focus { border-color: var(--accent); }
     .api-input-wrap input::placeholder { color: var(--text3); }
     .api-note { font-size: 11px; color: var(--text3); margin-top: 8px; }
 
-    /* ANALYZE BTN */
     .analyze-btn {
-      width: 100%;
-      padding: 14px;
+      width: 100%; padding: 14px;
       background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-lg);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      letter-spacing: -0.01em;
-      transition: all 0.2s;
-      margin-top: 4px;
-      position: relative;
-      overflow: hidden;
+      color: #fff; border: none; border-radius: var(--radius-lg);
+      font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: -0.01em;
+      transition: all 0.2s; margin-top: 4px; position: relative; overflow: hidden;
+      font-family: 'Inter', sans-serif;
     }
-    .analyze-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.1);
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-    .analyze-btn:not(:disabled):hover::after { opacity: 1; }
     .analyze-btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(108,99,255,0.35); }
     .analyze-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    /* LOADING */
-    .loading-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-      gap: 20px;
-    }
-    .loading-spinner {
-      width: 40px; height: 40px;
-      border: 2px solid var(--border2);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
+    /* ── LOADING ── */
+    .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 20px; }
+    .loading-spinner { width: 40px; height: 40px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-label { font-size: 14px; color: var(--text2); font-weight: 500; }
-    .loading-steps { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
-    .loading-step { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 8px; }
+    .loading-step { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 8px; margin-top: 6px; }
     .loading-step.done { color: var(--green); }
-    .loading-step .step-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--text3);
-      flex-shrink: 0;
-    }
-    .loading-step.done .step-dot { background: var(--green); }
-    .loading-step.active .step-dot { background: var(--accent); animation: pulse 1s infinite; }
+    .loading-step.active { color: var(--accent2); }
+    .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .loading-step.active .step-dot { animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    /* ASK PANEL */
+    /* ── ASK PANEL ── */
     .ask-panel {
-      background: var(--surface);
-      border: 1px solid var(--yellow-bg);
-      border-color: rgba(255,187,58,0.2);
-      border-radius: var(--radius-xl);
-      padding: 20px 24px;
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface); border: 1px solid rgba(255,187,58,0.2);
+      border-radius: var(--radius-xl); padding: 20px 24px; margin-bottom: 20px; position: relative; overflow: hidden;
     }
-    .ask-panel::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--yellow), transparent);
-    }
-    .ask-eyebrow {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--yellow);
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .ask-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--yellow), transparent); }
+    .ask-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--yellow); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
     .ask-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); animation: pulse 1.2s infinite; }
-    .ask-progress-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
+    .ask-progress-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
     .ask-tx-name { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
-    .ask-tx-meta { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+    .ask-tx-meta { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
     .ask-progress-bar-bg { width: 80px; height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
     .ask-progress-bar-fill { height: 100%; background: var(--yellow); border-radius: 2px; transition: width 0.3s; }
     .ask-opts { display: flex; flex-wrap: wrap; gap: 7px; }
     .ask-opt {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid var(--border2);
-      background: var(--surface2);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      color: var(--text);
-      transition: all 0.15s;
-      display: flex; align-items: center; gap: 5px;
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2);
+      background: var(--surface2); font-size: 12px; font-weight: 500; cursor: pointer;
+      color: var(--text); transition: all 0.15s; font-family: 'Inter', sans-serif;
     }
     .ask-opt:hover { background: var(--surface3); border-color: var(--accent); color: var(--accent2); transform: translateY(-1px); }
 
-    /* RESULTS HEADER */
-    .results-header {
-      margin-bottom: 2rem;
-    }
-    .results-title { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
-    .results-sub { font-size: 13px; color: var(--text2); }
-
-    /* MONTH TABS */
-    .month-tabs {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-    }
+    /* ── MONTH TABS ── */
+    .month-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
     .month-tab {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid var(--border2);
-      background: transparent;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      color: var(--text2);
-      transition: all 0.15s;
-      font-family: 'Inter', sans-serif;
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2);
+      background: transparent; font-size: 12px; font-weight: 500; cursor: pointer;
+      color: var(--text2); transition: all 0.15s; font-family: 'Inter', sans-serif;
     }
-    .month-tab:hover { color: var(--text); border-color: var(--border2); }
-    .month-tab.active {
-      background: var(--accent-bg);
-      color: var(--accent2);
-      border-color: rgba(108,99,255,0.3);
-    }
+    .month-tab:hover { color: var(--text); }
+    .month-tab.active { background: var(--accent-bg); color: var(--accent2); border-color: rgba(108,99,255,0.3); }
 
-    /* STATS */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 10px;
-      margin-bottom: 2rem;
-    }
+    /* ── STATS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
     @media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-
     .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 18px 20px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.15s;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 18px 20px; position: relative; overflow: hidden;
     }
-    .stat-card:hover { border-color: var(--border2); }
-    .stat-card .sc-label {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text3);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 10px;
-    }
-    .stat-card .sc-value {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      line-height: 1;
-    }
-    .stat-card .sc-value.red { color: var(--red); }
-    .stat-card .sc-value.green { color: var(--green); }
-    .stat-card .sc-glow {
-      position: absolute;
-      bottom: -20px; right: -20px;
-      width: 80px; height: 80px;
-      border-radius: 50%;
-      opacity: 0.06;
-    }
+    .sc-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .sc-value { font-size: 24px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+    .sc-value.red { color: var(--red); }
+    .sc-value.green { color: var(--green); }
+    .sc-glow { position: absolute; bottom: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; opacity: 0.06; }
     .stat-card.red-card .sc-glow { background: var(--red); }
     .stat-card.green-card .sc-glow { background: var(--green); }
 
-    /* CATEGORIES */
-    .section-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 20px 24px;
-      margin-bottom: 16px;
-    }
-    .section-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text2);
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .section-title span { font-size: 11px; color: var(--text3); font-weight: 400; }
+    /* ── SECTION BLOCK ── */
+    .section-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 20px 24px; margin-bottom: 16px; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+    .section-title-right { display: flex; align-items: center; gap: 8px; }
+    .section-sub { font-size: 11px; color: var(--text3); font-weight: 400; }
 
+    /* ── CHART ── */
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* ── CATEGORIES ── */
     .cat-list { display: flex; flex-direction: column; gap: 14px; }
     .cat-row { display: flex; align-items: center; gap: 12px; }
-    .cat-icon-wrap {
-      width: 34px; height: 34px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
-      flex-shrink: 0;
-    }
+    .cat-icon-wrap { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
     .cat-name { font-size: 13px; font-weight: 500; width: 110px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cat-bar-bg { flex: 1; height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
     .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
@@ -441,93 +252,101 @@
     .cat-amt { font-size: 13px; font-weight: 600; }
     .cat-pct { font-size: 10px; color: var(--text3); }
 
-    /* TRANSACTIONS */
-    .tx-list { display: flex; flex-direction: column; }
-    .tx-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      transition: all 0.12s;
-      cursor: default;
+    /* Add category btn */
+    .add-cat-btn {
+      display: flex; align-items: center; gap: 8px; padding: 10px 0;
+      background: transparent; border: none; border-top: 1px dashed var(--border2);
+      color: var(--accent2); font-size: 12px; font-weight: 500; cursor: pointer;
+      width: 100%; margin-top: 8px; font-family: 'Inter', sans-serif; transition: color 0.15s;
     }
+    .add-cat-btn:hover { color: var(--accent); }
+
+    /* New category modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius-xl); padding: 24px; width: 400px; max-width: 90vw;
+      box-shadow: var(--shadow);
+    }
+    .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .modal-field { margin-bottom: 14px; }
+    .modal-field label { font-size: 12px; color: var(--text2); font-weight: 500; display: block; margin-bottom: 6px; }
+    .modal-field input, .modal-field select {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 9px 12px; color: var(--text);
+      font-size: 13px; outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.15s;
+    }
+    .modal-field input:focus, .modal-field select:focus { border-color: var(--accent); }
+    .modal-field select option { background: var(--surface); }
+    .emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .emoji-opt {
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border2);
+      background: var(--surface2); font-size: 18px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .emoji-opt:hover, .emoji-opt.selected { border-color: var(--accent); background: var(--accent-bg); }
+    .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+    .modal-btn {
+      flex: 1; padding: 10px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+    }
+    .modal-btn.primary { background: var(--accent); color: #fff; border: none; }
+    .modal-btn.primary:hover { opacity: 0.9; }
+    .modal-btn.secondary { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+    .modal-btn.secondary:hover { background: var(--surface2); }
+
+    /* ── TRANSACTIONS ── */
+    .tx-list { display: flex; flex-direction: column; }
+    .tx-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); transition: all 0.12s; }
     .tx-row:last-child { border-bottom: none; }
     .tx-row:hover { padding-left: 4px; }
-    .tx-icon {
-      width: 38px; height: 38px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
+    .tx-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
     .tx-info { flex: 1; min-width: 0; }
     .tx-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tx-meta { font-size: 11px; color: var(--text3); margin-top: 1px; display: flex; gap: 6px; align-items: center; }
-    .tx-meta .dot-sep { color: var(--text3); }
+    .tx-meta { font-size: 11px; color: var(--text3); margin-top: 1px; }
     .tx-badge {
-      display: inline-block;
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      background: var(--surface2);
-      color: var(--text2);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.12s;
-      font-weight: 500;
+      font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--surface2);
+      color: var(--text2); border: 1px solid var(--border); cursor: pointer;
+      transition: all 0.12s; font-weight: 500; white-space: nowrap; flex-shrink: 0;
     }
     .tx-badge:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-bg); }
     .tx-amount { font-size: 14px; font-weight: 600; white-space: nowrap; letter-spacing: -0.02em; flex-shrink: 0; }
     .tx-amount.neg { color: var(--red); }
     .tx-amount.pos { color: var(--green); }
-
     .show-more-btn {
-      width: 100%;
-      padding: 12px;
-      background: transparent;
-      border: none;
-      border-top: 1px solid var(--border);
-      font-size: 12px;
-      color: var(--text2);
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
-      font-weight: 500;
-      transition: color 0.12s;
-      margin-top: 4px;
+      width: 100%; padding: 12px; background: transparent; border: none;
+      border-top: 1px solid var(--border); font-size: 12px; color: var(--text2);
+      cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; transition: color 0.12s; margin-top: 4px;
     }
     .show-more-btn:hover { color: var(--accent2); }
 
-    /* ALERT */
-    .alert-error {
-      background: var(--red-bg);
-      border: 1px solid rgba(255,92,124,0.2);
-      border-radius: var(--radius);
-      padding: 12px 16px;
-      font-size: 13px;
-      color: var(--red);
-      margin-bottom: 12px;
-    }
-
+    .alert-error { background: var(--red-bg); border: 1px solid rgba(255,92,124,0.2); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: var(--red); margin-bottom: 12px; }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 <div class="container">
 
+  <!-- NAV -->
   <nav class="nav">
     <div class="nav-logo">
       <div class="dot">💳</div>
       <span>Finanzas</span>
     </div>
-    <div class="nav-badge">BBVA · Beta</div>
+    <div class="nav-right">
+      <div class="nav-badge">BBVA · Beta</div>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+    </div>
   </nav>
 
-  <!-- ── UPLOAD ── -->
+  <!-- UPLOAD -->
   <div id="screen-upload">
     <div class="upload-screen-title">Analiza tus gastos</div>
     <div class="upload-screen-sub">Sube tus extractos BBVA y la IA los clasificará automáticamente</div>
-
     <div class="upload-grid">
       <label class="upload-zone" id="zone1">
         <input type="file" id="file1" accept=".xlsx,.xls" />
@@ -546,62 +365,113 @@
         <div class="uz-fname" id="fname2"></div>
       </label>
     </div>
-
     <div class="api-block">
       <div class="api-block-header">
-        <span>Clave API Anthropic — para clasificación con IA</span>
+        <span>Clave API Anthropic — clasificación con IA (opcional)</span>
         <a href="https://console.anthropic.com/settings/keys" target="_blank">Obtener clave →</a>
       </div>
       <div class="api-input-wrap">
-        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-... (opcional, mejora la clasificación)" autocomplete="off" />
       </div>
-      <div class="api-note">Solo se usa en tu navegador. Nunca se almacena ni envía a nuestros servidores.</div>
+      <div class="api-note">Solo se usa en tu navegador. Nunca se almacena. Sin clave también funciona.</div>
     </div>
-
     <div id="uploadError"></div>
     <button class="analyze-btn" id="analyzeBtn" disabled onclick="startAnalysis()">Analizar gastos</button>
   </div>
 
-  <!-- ── LOADING ── -->
+  <!-- LOADING -->
   <div id="screen-loading" class="hidden">
     <div class="loading-wrap">
       <div class="loading-spinner"></div>
       <div>
         <div class="loading-label" id="progressLabel">Procesando...</div>
-        <div class="loading-steps">
-          <div class="loading-step" id="step1"><div class="step-dot"></div>Leyendo archivos</div>
-          <div class="loading-step" id="step2"><div class="step-dot"></div>Clasificando transacciones</div>
-          <div class="loading-step" id="step3"><div class="step-dot"></div>Analizando con IA</div>
-        </div>
+        <div class="loading-step" id="step1"><div class="step-dot"></div>Leyendo archivos</div>
+        <div class="loading-step" id="step2"><div class="step-dot"></div>Clasificando transacciones</div>
+        <div class="loading-step" id="step3"><div class="step-dot"></div>Analizando con IA</div>
       </div>
     </div>
   </div>
 
-  <!-- ── ASK ── -->
+  <!-- ASK -->
   <div id="screen-ask" class="hidden"></div>
 
-  <!-- ── RESULTS ── -->
+  <!-- RESULTS -->
   <div id="screen-results" class="hidden">
-    <div class="results-header">
-      <div class="results-title" id="results-title">Resumen</div>
-      <div class="results-sub" id="results-sub"></div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.5rem">
+      <div style="font-size:26px;font-weight:700;letter-spacing:-0.03em" id="results-title">Resumen</div>
     </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem" id="results-sub"></div>
+
     <div class="month-tabs" id="monthTabs"></div>
     <div id="statsArea"></div>
-    <div class="section-block">
-      <div class="section-title">Gastos por categoría <span id="cats-total"></span></div>
-      <div class="cat-list" id="categoriesList"></div>
+
+    <!-- EVOLUTION CHART -->
+    <div class="section-block" id="chartBlock">
+      <div class="section-title">
+        Evolución mensual
+        <div class="section-title-right">
+          <span class="section-sub" id="chart-legend"></span>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="evolutionChart"></canvas></div>
     </div>
+
+    <!-- CATEGORIES -->
     <div class="section-block">
-      <div class="section-title">Transacciones <span id="tx-count"></span></div>
+      <div class="section-title">
+        Gastos por categoría
+        <div class="section-title-right">
+          <span class="section-sub" id="cats-total"></span>
+        </div>
+      </div>
+      <div class="cat-list" id="categoriesList"></div>
+      <button class="add-cat-btn" onclick="openAddCat()">＋ Añadir categoría</button>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="section-block">
+      <div class="section-title">Transacciones <span class="section-sub" id="tx-count"></span></div>
       <div class="tx-list" id="txList"></div>
     </div>
   </div>
+</div>
 
+<!-- ADD CATEGORY MODAL -->
+<div class="modal-backdrop hidden" id="catModal">
+  <div class="modal">
+    <div class="modal-title">Nueva categoría</div>
+    <div class="modal-field">
+      <label>Nombre</label>
+      <input type="text" id="newCatName" placeholder="Ej: Mascotas" maxlength="20" />
+    </div>
+    <div class="modal-field">
+      <label>Icono</label>
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <div class="modal-field">
+      <label>Color</label>
+      <input type="color" id="newCatColor" value="#6c63ff" style="height:38px;padding:4px 6px;cursor:pointer" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeAddCat()">Cancelar</button>
+      <button class="modal-btn primary" onclick="saveNewCat()">Añadir</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const CAT_CONFIG = {
+// ── THEME ──────────────────────────────────────────────────────────────────
+let theme = localStorage.getItem("theme") || "dark";
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("themeBtn").textContent = theme === "dark" ? "☀️" : "🌙";
+  if (window.evolutionChartInstance) renderChart();
+}
+function toggleTheme() { theme = theme === "dark" ? "light" : "dark"; localStorage.setItem("theme", theme); applyTheme(); }
+applyTheme();
+
+// ── CAT CONFIG ─────────────────────────────────────────────────────────────
+const DEFAULT_CATS = {
   "Restaurantes":   { color: "#ff6b6b", bg: "rgba(255,107,107,0.12)", icon: "🍽️" },
   "Supermercado":   { color: "#00d4aa", bg: "rgba(0,212,170,0.12)",   icon: "🛒" },
   "Transporte":     { color: "#6c63ff", bg: "rgba(108,99,255,0.12)",  icon: "🚇" },
@@ -613,71 +483,74 @@ const CAT_CONFIG = {
   "Seguros":        { color: "#86efac", bg: "rgba(134,239,172,0.12)", icon: "🛡️" },
   "Educación":      { color: "#818cf8", bg: "rgba(129,140,248,0.12)", icon: "📚" },
   "Servicios":      { color: "#64748b", bg: "rgba(100,116,139,0.12)", icon: "⚙️" },
+  "Alquiler":       { color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  icon: "🏠" },
   "Transferencias": { color: "#475569", bg: "rgba(71,85,105,0.12)",   icon: "↔️" },
   "Ahorro":         { color: "#00d4aa", bg: "rgba(0,212,170,0.12)",   icon: "💰" },
   "Nómina":         { color: "#00d4aa", bg: "rgba(0,212,170,0.12)",   icon: "💵" },
   "Otros":          { color: "#475569", bg: "rgba(71,85,105,0.12)",   icon: "❓" }
 };
 
+let CAT_CONFIG = JSON.parse(localStorage.getItem("catConfig") || "null") || {...DEFAULT_CATS};
+function saveCats() { localStorage.setItem("catConfig", JSON.stringify(CAT_CONFIG)); }
+
+const EMOJI_OPTIONS = ["🐾","🚀","🎮","🎵","🍕","🏖️","✈️","🎁","💻","📱","🌿","🍺","🎂","🐶","🐱","🎨","🏡","⚡","🛁","🧹","💈","🎓","🔧","🛒","🌮","☕","🧴","🎤","💎","🏋️"];
+let selectedEmoji = "🐾";
+
 const CAT_KEYWORDS = {
-  "Nómina": ["nòmina","nomina","abonament de nòmina","abonament nomina","sou","salari"],
-  "Restaurantes": ["restaurant","cafeteria","cafe ","bar ","llull","toscana","mahjabeen","hadar","kakigori","pollos","hort de sant","ramen","pizz","burguer","burger","sushi","kebab","mcdonalds","starbucks","dunkin","la toscana","kit kat","escaperoos"],
-  "Supermercado": ["supermercat","mercadona","carrefour","lidl","aldi","eroski","consum","el corte","dia ","alcampo","condis","superm","fruita","verdura","c. supermercat"],
-  "Transporte": ["renfe","fgc","tmb","metro ","bus ","taxi","uber","cabify","parking","estacionament","gasolina","repsol","cepsa","bp ","transraid","peaje","autopista","rodalies","b pr trav","trav de gracia"],
-  "Ocio": ["cinema","cine","netflix","spotify","amazon prime","hbo","disney","twitch","steam","playstation","classpass","padel","bowling","concierto","teatre","museu","amazon","amzn","www.amazon","escaperoos"],
-  "Deporte": ["pilates","gym","fitness","decathlon","intersport","running","futbol","piscina","natació","classpass"],
-  "Salud": ["farmacia","parafarmacia","dentist","medic","clinic","hospital","laboratori","oftalmol","fisioterap","salud","sanitas","adeslas","mutua"],
-  "Ropa": ["zara","mango","h&m","primark","pull&bear","bershka","stradivarius","nike","adidas","sprinter","natura "],
-  "Hogar": ["ikea","leroy","bricomart","ferreteria","electrica","fontaner","gas natural","endesa","iberdrola","naturgy","comunitat","comunidad","habitatge","alquil"],
-  "Seguros": ["allianz","mapfre","axa","generali","mutua seguros","assegurances","segur"],
-  "Educación": ["academia","escola","college","universitat","udemy","coursera","papeleria","llibreria","campus"],
-  "Servicios": ["paypal","apple","google","microsoft","vodafone","movistar","orange","jazztel","correos","notari","gestor","abogat","ajuntament","ajunt","impost","taxa","liquidació d'interessos","comissions"],
-  "Transferencias": ["bizum","transferència efectuada","traspàs a compte","traspas a compte","enviado","redondeo","traspàs programa"],
+  "Nómina":      ["nòmina","nomina","abonament de nòmina","sou","salari","mango mng"],
+  "Alquiler":    ["mar elgarrista","marc mar elgarrista","elgarrista otalora"],
+  "Restaurantes":["restaurant","cafeteria","cafe ","bar ","llull","toscana","mahjabeen","hadar","kakigori","pollos","hort de sant","ramen","pizz","burger","sushi","kebab","mcdonalds","starbucks","dunkin","kit kat"],
+  "Supermercado":["supermercat","mercadona","carrefour","lidl","aldi","eroski","consum","el corte","dia ","alcampo","condis","superm","c. supermercat"],
+  "Transporte":  ["renfe","fgc","tmb","metro ","bus ","taxi","uber","cabify","parking","estacionament","gasolina","repsol","cepsa","transraid","peaje","autopista","rodalies","b pr trav","trav de gracia"],
+  "Ocio":        ["cinema","cine","netflix","spotify","hbo","disney","twitch","steam","playstation","padel","bowling","concierto","teatre","museu","amazon","amzn","www.amazon","escaperoos","classpass"],
+  "Deporte":     ["pilates","gym","fitness","decathlon","intersport","running","futbol","piscina","classpass"],
+  "Salud":       ["farmacia","parafarmacia","dentist","medic","clinic","hospital","laboratori","fisioterap","sanitas","adeslas"],
+  "Ropa":        ["zara","h&m","primark","pull&bear","bershka","stradivarius","nike","adidas","sprinter","natura "],
+  "Hogar":       ["ikea","leroy","bricomart","ferreteria","endesa","iberdrola","naturgy","comunitat","comunidad"],
+  "Seguros":     ["allianz","mapfre","axa","generali","assegurances","segur"],
+  "Educación":   ["academia","escola","universitat","udemy","coursera","papeleria","llibreria"],
+  "Servicios":   ["paypal","apple","google","microsoft","vodafone","movistar","orange","correos","ajuntament","ajunt","impost","liquidació d'interessos"],
 };
 
+// ── STATE ──────────────────────────────────────────────────────────────────
 let txMain = [], txSavings = [], allTx = [];
 let selectedMonth = "all";
 let pendingAsk = [];
 let showAllTx = false;
 let file1Data = null, file2Data = null;
+window.evolutionChartInstance = null;
 
+// ── PARSE ──────────────────────────────────────────────────────────────────
 function parseFile(data) {
   const wb = XLSX.read(data, { type: "array" });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-
   let headerRow = -1;
   for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    if (r.some(c => /^import/i.test(String(c).trim()))) { headerRow = i; break; }
+    if (rows[i].some(c => /^import/i.test(String(c).trim()))) { headerRow = i; break; }
   }
   if (headerRow < 0) return [];
-
   const hdr = rows[headerRow].map(c => String(c).trim().toLowerCase());
-  const colImport   = hdr.findIndex(c => /^import/i.test(c));
-  const colData     = hdr.findIndex(c => c === "data" || c === "fecha");
-  const colConcepte = hdr.findIndex(c => c === "concepte" || c === "concepto");
-  const colMoviment = hdr.findIndex(c => c === "moviment" || c === "movimiento");
-  const colObs      = hdr.findIndex(c => c === "observacions" || c === "observaciones");
-
-  const iImport   = colImport   >= 0 ? colImport   : 5;
-  const iData     = colData     >= 0 ? colData     : 2;
-  const iConcepte = colConcepte >= 0 ? colConcepte : 3;
-  const iMoviment = colMoviment >= 0 ? colMoviment : 4;
-  const iObs      = colObs      >= 0 ? colObs      : 9;
-
+  const iImport   = Math.max(hdr.findIndex(c => /^import/i.test(c)), 5);
+  const iData     = hdr.findIndex(c => c === "data" || c === "fecha") >= 0 ? hdr.findIndex(c => c === "data" || c === "fecha") : 2;
+  const iConcepte = hdr.findIndex(c => c === "concepte" || c === "concepto") >= 0 ? hdr.findIndex(c => c === "concepte" || c === "concepto") : 3;
+  const iMoviment = hdr.findIndex(c => c === "moviment" || c === "movimiento") >= 0 ? hdr.findIndex(c => c === "moviment" || c === "movimiento") : 4;
+  const iObs      = hdr.findIndex(c => c === "observacions" || c === "observaciones") >= 0 ? hdr.findIndex(c => c === "observacions" || c === "observaciones") : 9;
   const txs = [];
   for (let i = headerRow + 1; i < rows.length; i++) {
     const r = rows[i];
-    const rawImport = String(r[iImport] ?? "").replace(",", ".").trim();
-    const importVal = parseFloat(rawImport);
+    const importVal = parseFloat(String(r[iImport] ?? "").replace(",", ".").trim());
     if (isNaN(importVal)) continue;
-    const dateStr      = String(r[iData]     ?? "").trim();
-    const concepte     = String(r[iConcepte] ?? "").trim().toLowerCase();
-    const moviment     = String(r[iMoviment] ?? "").trim().toLowerCase();
-    const observacions = String(r[iObs]      ?? "").trim().toLowerCase();
+    const concepte = String(r[iConcepte] ?? "").trim().toLowerCase();
     if (!concepte || concepte.length < 2) continue;
-    txs.push({ id: i * 1000 + Math.random(), date: dateStr, concepte, moviment, observacions, import: importVal, category: null, source: "main" });
+    txs.push({
+      id: i * 1000 + Math.random(),
+      date: String(r[iData] ?? "").trim(),
+      concepte,
+      moviment: String(r[iMoviment] ?? "").trim().toLowerCase(),
+      observacions: String(r[iObs] ?? "").trim().toLowerCase(),
+      import: importVal, category: null, source: "main"
+    });
   }
   return txs;
 }
@@ -702,48 +575,39 @@ function getMonthLabel(k) {
   return `${M[parseInt(m)]} ${y}`;
 }
 
+// ── AI ─────────────────────────────────────────────────────────────────────
 async function classifyWithAI(transactions, apiKey) {
   const unc = transactions.filter(t => !t.category);
   if (!unc.length || !apiKey) return;
   const cats = Object.keys(CAT_CONFIG).join(", ");
-  const batches = [];
-  for (let i = 0; i < unc.length; i += 40) batches.push(unc.slice(i, i+40));
-  for (const batch of batches) {
+  for (let i = 0; i < unc.length; i += 40) {
+    const batch = unc.slice(i, i+40);
     const items = batch.map(t => `ID:${t.id}|${t.concepte}|${t.moviment}|${t.import}€`).join("\n");
     try {
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: `Clasifica estas transacciones bancarias españolas/catalanas. Categorías: ${cats}\n\n${items}\n\nResponde SOLO con JSON válido sin markdown:\n[{"id":"ID_EXACTO","cat":"Categoria"}]\nUsa "Otros" si no estás seguro. "Nómina" para sueldos. "Transferencias" para traspasos.` }]
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000,
+          messages: [{ role: "user", content: `Clasifica estas transacciones bancarias españolas/catalanas. Categorías: ${cats}\n\n${items}\n\nResponde SOLO con JSON válido sin markdown:\n[{"id":"ID_EXACTO","cat":"Categoria"}]` }]
         })
       });
       const d = await resp.json();
       const txt = (d.content?.[0]?.text || "[]").replace(/```json|```/g,"").trim();
-      let results = [];
-      try { results = JSON.parse(txt); } catch(e) {}
-      results.forEach(r => {
-        const tx = batch.find(t => String(t.id) === String(r.id));
-        if (tx && r.cat && CAT_CONFIG[r.cat]) tx.category = r.cat;
-      });
-    } catch(e) { console.warn("AI error", e); }
+      let results = []; try { results = JSON.parse(txt); } catch(e) {}
+      results.forEach(r => { const tx = batch.find(t => String(t.id) === String(r.id)); if (tx && r.cat && CAT_CONFIG[r.cat]) tx.category = r.cat; });
+    } catch(e) {}
   }
 }
 
+// ── FLOW ───────────────────────────────────────────────────────────────────
 function setStep(n) {
   ["step1","step2","step3"].forEach((id,i) => {
-    const el = document.getElementById(id);
-    if (i < n-1) el.className = "loading-step done";
-    else if (i === n-1) el.className = "loading-step active";
-    else el.className = "loading-step";
+    document.getElementById(id).className = "loading-step" + (i < n-1 ? " done" : i === n-1 ? " active" : "");
   });
   document.getElementById("progressLabel").textContent = ["","Leyendo archivos...","Clasificando...","Analizando con IA..."][n] || "Procesando...";
 }
 
 async function startAnalysis() {
-  if (!file1Data && !file2Data) return;
   const apiKey = document.getElementById("apiKey").value.trim();
   document.getElementById("screen-upload").classList.add("hidden");
   document.getElementById("screen-loading").classList.remove("hidden");
@@ -752,24 +616,52 @@ async function startAnalysis() {
     txMain    = file1Data ? parseFile(file1Data) : [];
     txSavings = file2Data ? parseFile(file2Data) : [];
     txSavings.forEach(t => { t.source = "savings"; });
-
     setStep(2);
-    txMain.forEach(t => { const c = classifyLocal(t); if (c) t.category = c; });
+    txMain.forEach(t => {
+      const text = [t.concepte, t.moviment, t.observacions].join(" ");
+      // Skip internal transfers: redondeo, traspasos entre cuentas propias
+      if (
+        text.includes("traspàs programa") || text.includes("traspas programa") ||
+        text.includes("redondeo tarjeta") ||
+        text.includes("liquidació d'interessos-comissions")
+      ) {
+        t.category = "_skip";
+        return;
+      }
+      // Alquiler
+      if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora") || text.includes("marc mar")) && t.import < 0) {
+        t.category = "Alquiler";
+        return;
+      }
+      const c = classifyLocal(t);
+      if (c) t.category = c;
+    });
     txSavings.forEach(t => {
-      const text = [t.concepte, t.moviment].join(" ");
-      if (text.includes("nòmina") || text.includes("nomina") || text.includes("mango mng")) t.category = "Nómina";
-      else if (text.includes("traspàs") || text.includes("transferència")) t.category = "Transferencias";
+      const text = [t.concepte, t.moviment, t.observacions].join(" ");
+      // Nómina first
+      if (text.includes("nòmina") || text.includes("nomina") || text.includes("mango mng")) {
+        t.category = "Nómina";
+      }
+      // Alquiler (transferencias a Mar elgarrista ~300-400€ a principio de mes)
+      else if ((text.includes("mar elgarrista") || text.includes("elgarrista otalora")) && t.import < 0) {
+        t.category = "Alquiler";
+      }
+      // Mark ALL traspasos/redondeos as hidden — internal transfers between own accounts
+      else if (
+        text.includes("traspàs programa") || text.includes("traspas programa") ||
+        text.includes("traspàs a compte") || text.includes("traspas a compte") ||
+        text.includes("traspàs des de compte") || text.includes("traspas des de compte") ||
+        text.includes("redondeo tarjeta") || text.includes("ahorro nomina") ||
+        text.includes("embargament")
+      ) {
+        t.category = "_skip";
+      }
       else { const c = classifyLocal(t); if (c) t.category = c; }
     });
-
-    if (apiKey) {
-      setStep(3);
-      await classifyWithAI([...txMain, ...txSavings].filter(t => !t.category), apiKey);
-    }
-
-    allTx = [...txMain, ...txSavings];
+    if (apiKey) { setStep(3); await classifyWithAI([...txMain, ...txSavings].filter(t => !t.category), apiKey); }
+    // Exclude internal transfers between own accounts
+    allTx = [...txMain, ...txSavings].filter(t => t.category !== "_skip");
     pendingAsk = allTx.filter(t => (!t.category || t.category === "Otros") && Math.abs(t.import) > 3 && t.import < 0).slice(0, 8);
-
     document.getElementById("screen-loading").classList.add("hidden");
     showAskIfNeeded();
   } catch(e) {
@@ -786,25 +678,17 @@ function showAskIfNeeded() {
   const tx = remaining[0];
   const done = pendingAsk.length - remaining.length;
   const pct = ((done / pendingAsk.length) * 100).toFixed(0);
-  const allCats = ["Restaurantes","Supermercado","Transporte","Ocio","Deporte","Servicios","Hogar","Seguros","Salud","Ropa","Otros"];
+  const allCats = Object.keys(CAT_CONFIG).filter(c => !["Nómina","Ahorro","Transferencias"].includes(c));
   askScreen.classList.remove("hidden");
-  askScreen.innerHTML = `
-    <div class="ask-panel">
-      <div class="ask-eyebrow">Necesito tu ayuda</div>
-      <div class="ask-progress-row">
-        <div>
-          <div class="ask-tx-name">${capitalize(tx.concepte)}</div>
-          <div class="ask-tx-meta">${Math.abs(tx.import).toFixed(2)}€ · ${tx.date}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text3);text-align:right;margin-bottom:4px">${done}/${pendingAsk.length}</div>
-          <div class="ask-progress-bar-bg"><div class="ask-progress-bar-fill" style="width:${pct}%"></div></div>
-        </div>
-      </div>
-      <div class="ask-opts">
-        ${allCats.map(c => `<button class="ask-opt" onclick="assignAndContinue('${tx.id}','${c}')">${CAT_CONFIG[c].icon} ${c}</button>`).join("")}
-      </div>
-    </div>`;
+  askScreen.innerHTML = `<div class="ask-panel">
+    <div class="ask-eyebrow">Necesito tu ayuda</div>
+    <div class="ask-progress-row">
+      <div><div class="ask-tx-name">${capitalize(tx.concepte)}</div><div class="ask-tx-meta">${Math.abs(tx.import).toFixed(2)}€ · ${tx.date}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);text-align:right;margin-bottom:4px">${done}/${pendingAsk.length}</div>
+        <div class="ask-progress-bar-bg"><div class="ask-progress-bar-fill" style="width:${pct}%"></div></div></div>
+    </div>
+    <div class="ask-opts">${allCats.map(c => `<button class="ask-opt" onclick="assignAndContinue('${tx.id}','${c}')">${CAT_CONFIG[c].icon} ${c}</button>`).join("")}</div>
+  </div>`;
   renderResults();
 }
 
@@ -814,6 +698,7 @@ function assignAndContinue(id, cat) {
   showAskIfNeeded();
 }
 
+// ── RENDER ─────────────────────────────────────────────────────────────────
 function renderResults() {
   document.getElementById("screen-results").classList.remove("hidden");
   const months = [...new Set(allTx.map(t => getMonthKey(t.date)))].filter(m => m !== "unknown").sort().reverse();
@@ -824,8 +709,10 @@ function renderResults() {
 
   const txs = selectedMonth === "all" ? allTx : allTx.filter(t => getMonthKey(t.date) === selectedMonth);
   const gastos   = txs.filter(t => t.import < 0 && t.source === "main" && t.category !== "Transferencias");
-  const ingresos = txs.filter(t => t.import > 0 && (t.category === "Nómina" || (t.source === "savings" && t.category !== "Transferencias" && t.category !== "Ahorro")));
-  const ahorro   = txs.filter(t => t.import < 0 && t.source === "savings" && t.category !== "Transferencias");
+  // Ingresos = only Nómina entries from savings account
+  const ingresos = txs.filter(t => t.category === "Nómina" && t.import > 0);
+  // Ahorro = negative savings transactions that aren't alquiler or _skip
+  const ahorro   = txs.filter(t => t.import < 0 && t.source === "savings" && t.category !== "Alquiler");
 
   const totalGasto   = gastos.reduce((s,t) => s + Math.abs(t.import), 0);
   const totalIngreso = ingresos.reduce((s,t) => s + t.import, 0);
@@ -835,26 +722,24 @@ function renderResults() {
   document.getElementById("results-sub").textContent = `${txs.length} transacciones · ${months.length} ${months.length===1?"mes":"meses"}`;
 
   const hasSavings = txSavings.length > 0;
-  const statsArea = document.getElementById("statsArea");
-  if (hasSavings) {
-    statsArea.innerHTML = `<div class="stats-grid">
-      <div class="stat-card red-card"><div class="sc-label">Gastado</div><div class="sc-value red">${fmt(totalGasto)}</div><div class="sc-glow"></div></div>
-      <div class="stat-card green-card"><div class="sc-label">Ingresos</div><div class="sc-value green">${fmt(totalIngreso)}</div><div class="sc-glow"></div></div>
-      <div class="stat-card green-card"><div class="sc-label">Ahorro</div><div class="sc-value green">${fmt(totalAhorro)}</div><div class="sc-glow"></div></div>
-    </div>`;
-  } else {
-    statsArea.innerHTML = `<div class="stats-grid">
-      <div class="stat-card red-card"><div class="sc-label">Gastado</div><div class="sc-value red">${fmt(totalGasto)}</div><div class="sc-glow"></div></div>
-      <div class="stat-card"><div class="sc-label">Transacciones</div><div class="sc-value">${gastos.length}</div></div>
-      <div class="stat-card"><div class="sc-label">Media / día</div><div class="sc-value">${fmt(totalGasto / Math.max(daysInPeriod(txs),1))}</div></div>
-    </div>`;
-  }
+  document.getElementById("statsArea").innerHTML = hasSavings
+    ? `<div class="stats-grid">
+        <div class="stat-card red-card"><div class="sc-label">Gastado</div><div class="sc-value red">${fmt(totalGasto)}</div><div class="sc-glow"></div></div>
+        <div class="stat-card green-card"><div class="sc-label">Ingresos</div><div class="sc-value green">${fmt(totalIngreso)}</div><div class="sc-glow"></div></div>
+        <div class="stat-card green-card"><div class="sc-label">Ahorro</div><div class="sc-value green">${fmt(totalAhorro)}</div><div class="sc-glow"></div></div>
+      </div>`
+    : `<div class="stats-grid">
+        <div class="stat-card red-card"><div class="sc-label">Gastado</div><div class="sc-value red">${fmt(totalGasto)}</div><div class="sc-glow"></div></div>
+        <div class="stat-card"><div class="sc-label">Transacciones</div><div class="sc-value">${gastos.length}</div></div>
+        <div class="stat-card"><div class="sc-label">Media / día</div><div class="sc-value">${fmt(totalGasto / Math.max(daysInPeriod(txs),1))}</div></div>
+      </div>`;
+
+  renderChart(months);
 
   const byCat = {};
   gastos.forEach(t => { const c = t.category || "Otros"; byCat[c] = (byCat[c]||0) + Math.abs(t.import); });
   const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
   const maxAmt = sorted[0]?.[1] || 1;
-
   document.getElementById("cats-total").textContent = `${fmt(totalGasto)} total`;
   document.getElementById("categoriesList").innerHTML = sorted.map(([cat,amt]) => {
     const cfg = CAT_CONFIG[cat] || CAT_CONFIG["Otros"];
@@ -878,7 +763,7 @@ function renderResults() {
       <div class="tx-icon" style="background:${cfg.bg}">${cfg.icon}</div>
       <div class="tx-info">
         <div class="tx-name" title="${name}">${short}</div>
-        <div class="tx-meta"><span>${t.date.slice(0,5)}</span><span class="dot-sep">·</span><span>${t.source==="savings"?"ahorro":"corriente"}</span></div>
+        <div class="tx-meta">${t.date.slice(0,5)} · ${t.source==="savings"?"ahorro":"corriente"}</div>
       </div>
       <span class="tx-badge" onclick="promptCat('${t.id}')">${t.category||"?"}</span>
       <span class="tx-amount ${t.import<0?"neg":"pos"}">${t.import>0?"+":""}${t.import.toFixed(2)}€</span>
@@ -886,6 +771,96 @@ function renderResults() {
   }).join("") + (!showAllTx && allVisible.length > 25 ? `<button class="show-more-btn" onclick="showAll()">Ver ${allVisible.length-25} más</button>` : "");
 }
 
+// ── CHART ──────────────────────────────────────────────────────────────────
+function renderChart(months) {
+  const allMonths = [...new Set(allTx.map(t => getMonthKey(t.date)))].filter(m => m !== "unknown").sort();
+  if (allMonths.length < 2) { document.getElementById("chartBlock").classList.add("hidden"); return; }
+  document.getElementById("chartBlock").classList.remove("hidden");
+
+  const isDark = theme === "dark";
+  const labels = allMonths.map(m => getMonthLabel(m));
+
+  const dataGastos   = allMonths.map(m => {
+    const txs = allTx.filter(t => getMonthKey(t.date) === m && t.import < 0 && t.source === "main" && t.category !== "Transferencias");
+    return Math.round(txs.reduce((s,t) => s + Math.abs(t.import), 0));
+  });
+  const dataIngresos = allMonths.map(m => {
+    const txs = allTx.filter(t => getMonthKey(t.date) === m && t.category === "Nómina" && t.import > 0);
+    return Math.round(txs.reduce((s,t) => s + t.import, 0));
+  });
+  const dataAhorro   = allMonths.map(m => {
+    const txs = allTx.filter(t => getMonthKey(t.date) === m && t.import < 0 && t.source === "savings" && t.category !== "Alquiler");
+    return Math.round(txs.reduce((s,t) => s + Math.abs(t.import), 0));
+  });
+
+  const hasIngresos = dataIngresos.some(v => v > 0);
+  const hasAhorro   = dataAhorro.some(v => v > 0);
+
+  const ctx = document.getElementById("evolutionChart").getContext("2d");
+  if (window.evolutionChartInstance) window.evolutionChartInstance.destroy();
+
+  const gridColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
+  const textColor = isDark ? "#4a4a66" : "#a0a0bc";
+
+  const datasets = [
+    { label: "Gastos", data: dataGastos, borderColor: "#ff5c7c", backgroundColor: "rgba(255,92,124,0.08)", borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#ff5c7c", tension: 0.4, fill: true }
+  ];
+  if (hasIngresos) datasets.push({ label: "Ingresos", data: dataIngresos, borderColor: "#00d4aa", backgroundColor: "rgba(0,212,170,0.08)", borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#00d4aa", tension: 0.4, fill: true });
+  if (hasAhorro)   datasets.push({ label: "Ahorro",   data: dataAhorro,   borderColor: "#6c63ff", backgroundColor: "rgba(108,99,255,0.08)", borderWidth: 2, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#6c63ff", tension: 0.4, fill: true });
+
+  window.evolutionChartInstance = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: true, position: "top", labels: { color: textColor, font: { family: "Inter", size: 11 }, boxWidth: 12, padding: 16, usePointStyle: true, pointStyle: "circle" } },
+        tooltip: {
+          backgroundColor: isDark ? "#1c1c26" : "#fff",
+          borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
+          borderWidth: 1,
+          titleColor: isDark ? "#f0f0ff" : "#0d0d1a",
+          bodyColor: isDark ? "#8888aa" : "#5a5a7a",
+          padding: 12, cornerRadius: 10,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("es")}€` }
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor, drawBorder: false }, ticks: { color: textColor, font: { family: "Inter", size: 11 } } },
+        y: { grid: { color: gridColor, drawBorder: false }, ticks: { color: textColor, font: { family: "Inter", size: 11 }, callback: v => v.toLocaleString("es") + "€" }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ── ADD CATEGORY ───────────────────────────────────────────────────────────
+function openAddCat() {
+  document.getElementById("newCatName").value = "";
+  selectedEmoji = "🐾";
+  document.getElementById("newCatColor").value = "#6c63ff";
+  const grid = document.getElementById("emojiGrid");
+  grid.innerHTML = EMOJI_OPTIONS.map(e => `<div class="emoji-opt ${e===selectedEmoji?"selected":""}" onclick="selectEmojiOpt('${e}')">${e}</div>`).join("");
+  document.getElementById("catModal").classList.remove("hidden");
+}
+function closeAddCat() { document.getElementById("catModal").classList.add("hidden"); }
+function selectEmojiOpt(e) {
+  selectedEmoji = e;
+  document.querySelectorAll(".emoji-opt").forEach(el => el.classList.toggle("selected", el.textContent === e));
+}
+function saveNewCat() {
+  const name = document.getElementById("newCatName").value.trim();
+  if (!name) { document.getElementById("newCatName").focus(); return; }
+  const color = document.getElementById("newCatColor").value;
+  const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
+  CAT_CONFIG[name] = { color, bg: `rgba(${r},${g},${b},0.12)`, icon: selectedEmoji };
+  CAT_KEYWORDS[name] = [];
+  saveCats();
+  closeAddCat();
+  if (allTx.length) renderResults();
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
 function selectMonth(m) { selectedMonth = m; showAllTx = false; renderResults(); }
 function showAll() { showAllTx = true; renderResults(); }
 
@@ -912,19 +887,18 @@ function parseDate(s) {
   return p.length===3 ? new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0])) : new Date(s);
 }
 
+// ── FILE ZONES ─────────────────────────────────────────────────────────────
 function setupZone(inputId, zoneId, checkId, fnameId, dataVar) {
   const input = document.getElementById(inputId);
   const zone  = document.getElementById(zoneId);
   input.addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       if (dataVar===1) file1Data = new Uint8Array(ev.target.result);
       else file2Data = new Uint8Array(ev.target.result);
       document.getElementById(fnameId).textContent = file.name;
-      zone.classList.add("done");
-      updateAnalyzeBtn();
+      zone.classList.add("done"); updateAnalyzeBtn();
     };
     reader.readAsArrayBuffer(file);
   });
@@ -932,17 +906,11 @@ function setupZone(inputId, zoneId, checkId, fnameId, dataVar) {
   zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
   zone.addEventListener("drop", e => {
     e.preventDefault(); zone.classList.remove("drag");
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    input.files = e.dataTransfer.files;
-    input.dispatchEvent(new Event("change"));
+    const file = e.dataTransfer.files[0]; if (!file) return;
+    input.files = e.dataTransfer.files; input.dispatchEvent(new Event("change"));
   });
 }
-
-function updateAnalyzeBtn() {
-  document.getElementById("analyzeBtn").disabled = !file1Data && !file2Data;
-}
-
+function updateAnalyzeBtn() { document.getElementById("analyzeBtn").disabled = !file1Data && !file2Data; }
 setupZone("file1","zone1","check1","fname1",1);
 setupZone("file2","zone2","check2","fname2",2);
 </script>
