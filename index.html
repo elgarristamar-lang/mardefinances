@@ -26,7 +26,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 .upload-sub{font-size:14px;color:var(--txt2);margin-bottom:2.5rem}
 .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
 @media(max-width:520px){.upload-grid{grid-template-columns:1fr}}
-.uzone{background:var(--surf);border:1.5px dashed var(--brd2);border-radius:var(--rl);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;user-select:none}
+.uzone{background:var(--surf);border:1.5px dashed var(--brd2);border-radius:var(--rl);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;user-select:none}
 .uzone:hover{border-color:var(--acc);background:var(--surf2)}
 .uzone.drag{border-color:var(--acc);background:var(--surf2)}
 .uzone.done{border-style:solid;border-color:var(--grn)}
@@ -37,7 +37,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 .uz-chk{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--grn);color:#000;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center}
 .uzone.done .uz-chk{display:flex}
 .uz-fn{font-size:10px;color:var(--grn);margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-inp{display:none}
+.file-inp{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
 .api-block{background:var(--surf);border:1px solid var(--brd2);border-radius:var(--rl);padding:16px 20px;margin-bottom:12px}
 .api-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .api-hdr span{font-size:12px;font-weight:500;color:var(--txt2)}
@@ -350,17 +350,54 @@ function setupZone(zid, fid, ckid, fnid, slot) {
   });
 }
 
+function countRows(data) {
+  try {
+    const wb = XLSX.read(data, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    // Find header row and count data rows after it
+    let hr = -1;
+    for(let i=0;i<rows.length;i++){
+      if(rows[i].some(c=>/^data$/i.test(String(c).trim()))&&rows[i].some(c=>/^import/i.test(String(c).trim()))){hr=i;break;}
+    }
+    if(hr<0) return rows.length;
+    // Count rows with a valid amount
+    let n=0;
+    for(let i=hr+1;i<rows.length;i++){
+      const r=rows[i];
+      // find import col
+      const hdr=rows[hr].map(c=>String(c).trim().toLowerCase());
+      const iI=hdr.findIndex(c=>/^import/i.test(c));
+      const CI=iI>=0?iI:5;
+      const amt=parseFloat(String(r[CI]??'').replace(',','.').trim());
+      if(!isNaN(amt)) n++;
+    }
+    return n;
+  } catch(e) { return '?'; }
+}
+
+function showToast(msg, ok=true) {
+  let t = document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(${ok?'0':'0'});background:${ok?'var(--grn)':'var(--red)'};color:${ok?'#000':'#fff'};padding:12px 24px;border-radius:40px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:opacity .4s;opacity:1;font-family:Inter,sans-serif`;
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 3000);
+}
+
 function loadFile(file, slot, fnid, ckid, zid) {
   const rd = new FileReader();
   rd.onload = ev => {
-    if (slot === 1) f1 = new Uint8Array(ev.target.result);
-    else            f2 = new Uint8Array(ev.target.result);
+    const data = new Uint8Array(ev.target.result);
+    if (slot === 1) f1 = data;
+    else            f2 = data;
+    const rows = countRows(data);
     document.getElementById(fnid).textContent = file.name;
     document.getElementById(zid).classList.add('done');
     document.getElementById(ckid).style.display = 'flex';
     document.getElementById('abtn').disabled = !f1 && !f2;
+    showToast(`✓ ${file.name.length>25?file.name.slice(0,25)+'…':file.name} — ${rows} transacciones`);
   };
-  rd.onerror = () => alert('Error leyendo el fichero. Inténtalo de nuevo.');
+  rd.onerror = () => showToast('Error leyendo el fichero', false);
   rd.readAsArrayBuffer(file);
 }
 
