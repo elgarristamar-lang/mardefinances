@@ -37,7 +37,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 .uz-chk{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--grn);color:#000;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center}
 .uzone.done .uz-chk{display:flex}
 .uz-fn{font-size:10px;color:var(--grn);margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-inp{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
+
 .api-block{background:var(--surf);border:1px solid var(--brd2);border-radius:var(--rl);padding:16px 20px;margin-bottom:12px}
 .api-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .api-hdr span{font-size:12px;font-weight:500;color:var(--txt2)}
@@ -148,23 +148,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
   <div class="upload-title">Analiza tus gastos</div>
   <div class="upload-sub">Sube tus extractos BBVA y la IA clasificará tus gastos automáticamente</div>
   <div class="upload-grid">
-    <label class="uzone" id="z1" for="fi1">
+    <div class="uzone" id="z1" onclick="document.getElementById('fi1').click()">
       <div class="uz-chk" id="ck1">✓</div>
       <div class="uz-ico">💳</div>
       <div class="uz-lbl">Cuenta corriente</div>
-      <div class="uz-sub">Gastos, pagos, bizum</div>
+      <div class="uz-sub">Gastos, pagos, bizum · haz clic para subir</div>
       <div class="uz-fn" id="fn1"></div>
-      <input type="file" id="fi1" class="file-inp" accept=".xlsx,.xls"/>
-    </label>
-    <label class="uzone" id="z2" for="fi2">
+    </div>
+    <div class="uzone" id="z2" onclick="document.getElementById('fi2').click()">
       <div class="uz-chk" id="ck2">✓</div>
       <div class="uz-ico">🏦</div>
       <div class="uz-lbl">Cuenta ahorro / nómina</div>
-      <div class="uz-sub">Ingresos, nómina</div>
+      <div class="uz-sub">Ingresos, nómina · haz clic para subir</div>
       <div class="uz-fn" id="fn2"></div>
-      <input type="file" id="fi2" class="file-inp" accept=".xlsx,.xls"/>
-    </label>
+    </div>
   </div>
+  <input type="file" id="fi1" style="display:none" accept=".xlsx,.xls" onchange="handleFile(this,1)"/>
+  <input type="file" id="fi2" style="display:none" accept=".xlsx,.xls" onchange="handleFile(this,2)"/>
   <div class="api-block">
     <div class="api-hdr">
       <span>Clave API Anthropic — clasificación con IA (opcional)</span>
@@ -326,29 +326,29 @@ let f1=null,f2=null,chInst=null;
 const EMOJIS=['🐾','🚀','🎮','🎵','🍕','🏖️','✈️','🎁','💻','📱','🌿','🍺','🎂','🐶','🐱','🎨','🏡','⚡','🛁','🧹','💈','🎓','🔧','🌮','☕','🧴','🎤','💎','🏋️','🎯'];
 let selEmo='🐾';
 
-// FILE UPLOAD — clean approach, no label conflicts
-function setupZone(zid, fid, ckid, fnid, slot) {
-  const z  = document.getElementById(zid);
-  const fi = document.getElementById(fid);
+// FILE UPLOAD
+// Inputs have onchange="handleFile(this,N)" directly in HTML — most reliable approach
+function handleFile(input, slot) {
+  const f = input.files[0];
+  if (!f) return;
+  const ids = slot===1 ? ['fn1','ck1','z1'] : ['fn2','ck2','z2'];
+  loadFile(f, slot, ids[0], ids[1], ids[2]);
+}
 
-  // File chosen via native label click
-  fi.addEventListener('change', () => {
-    const f = fi.files[0];
-    if (!f) return;
-    loadFile(f, slot, fnid, ckid, zid);
-  });
-
-  // Drag & drop onto the label
+// Drag & drop
+['z1','z2'].forEach((zid, i) => {
+  const z = document.getElementById(zid);
+  const slot = i + 1;
   z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag'); });
   z.addEventListener('dragleave', () => z.classList.remove('drag'));
   z.addEventListener('drop', e => {
-    e.preventDefault();
-    z.classList.remove('drag');
+    e.preventDefault(); z.classList.remove('drag');
     const f = e.dataTransfer.files[0];
     if (!f) return;
-    loadFile(f, slot, fnid, ckid, zid);
+    const ids = slot===1 ? ['fn1','ck1','z1'] : ['fn2','ck2','z2'];
+    loadFile(f, slot, ids[0], ids[1], ids[2]);
   });
-}
+});
 
 function countRows(data) {
   try {
@@ -401,8 +401,7 @@ function loadFile(file, slot, fnid, ckid, zid) {
   rd.readAsArrayBuffer(file);
 }
 
-setupZone('z1', 'fi1', 'ck1', 'fn1', 1);
-setupZone('z2', 'fi2', 'ck2', 'fn2', 2);
+
 
 // STEPS
 function setStep(n){
