@@ -26,17 +26,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 .upload-sub{font-size:14px;color:var(--txt2);margin-bottom:2.5rem}
 .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
 @media(max-width:520px){.upload-grid{grid-template-columns:1fr}}
-.uzone{background:var(--surf);border:1.5px dashed var(--brd2);border-radius:var(--rl);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;user-select:none}
-.uzone:hover{border-color:var(--acc);background:var(--surf2)}
+
+/* Upload zone — simple div, no label tricks */
+.uzone{background:var(--surf);border:1.5px dashed var(--brd2);border-radius:var(--rl);padding:1.75rem 1.5rem;text-align:center;transition:all .2s;position:relative}
 .uzone.drag{border-color:var(--acc);background:var(--surf2)}
 .uzone.done{border-style:solid;border-color:var(--grn)}
-.uz-ico{width:44px;height:44px;border-radius:12px;background:var(--surf2);border:1px solid var(--brd2);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 14px;transition:background .2s}
+.uz-ico{width:44px;height:44px;border-radius:12px;background:var(--surf2);border:1px solid var(--brd2);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px;transition:background .2s}
 .uzone.done .uz-ico{background:var(--grn-bg);border-color:rgba(0,212,170,.3)}
-.uz-lbl{font-size:13px;font-weight:600;margin-bottom:4px}
-.uz-sub{font-size:11px;color:var(--txt2)}
+.uz-lbl{font-size:13px;font-weight:600;margin-bottom:3px}
+.uz-sub{font-size:11px;color:var(--txt2);margin-bottom:14px}
 .uz-chk{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--grn);color:#000;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center}
 .uzone.done .uz-chk{display:flex}
-.uz-fn{font-size:10px;color:var(--grn);margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uz-fn{font-size:10px;color:var(--grn);margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:14px}
+
+/* The actual upload button inside each zone */
+.upload-btn{display:inline-block;padding:7px 18px;background:var(--acc-bg);color:var(--acc2);border:1px solid rgba(108,99,255,.3);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.upload-btn:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
+.uzone.done .upload-btn{background:var(--grn-bg);color:var(--grn);border-color:rgba(0,212,170,.3)}
+.uzone.done .upload-btn:hover{background:var(--grn);color:#000}
 
 .api-block{background:var(--surf);border:1px solid var(--brd2);border-radius:var(--rl);padding:16px 20px;margin-bottom:12px}
 .api-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -49,6 +56,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 .abtn{width:100%;padding:14px;background:linear-gradient(135deg,var(--acc),#a855f7);color:#fff;border:none;border-radius:var(--rl);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:4px;font-family:'Inter',sans-serif}
 .abtn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(108,99,255,.35)}
 .abtn:disabled{opacity:.3;cursor:not-allowed}
+
+/* Toast */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:40px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:'Inter',sans-serif;transition:opacity .4s;white-space:nowrap}
+.toast.ok{background:var(--grn);color:#000}
+.toast.err{background:var(--red);color:#fff}
+
 .lwrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px}
 .spin{width:40px;height:40px;border:2px solid var(--brd2);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -102,7 +115,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 .mtitle{font-size:16px;font-weight:600;margin-bottom:16px}
 .mf{margin-bottom:14px}
 .mf label{font-size:12px;color:var(--txt2);font-weight:500;display:block;margin-bottom:6px}
-.mf input,.mf select{width:100%;background:var(--surf2);border:1px solid var(--brd2);border-radius:var(--r);padding:9px 12px;color:var(--txt);font-size:13px;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s}
+.mf input{width:100%;background:var(--surf2);border:1px solid var(--brd2);border-radius:var(--r);padding:9px 12px;color:var(--txt);font-size:13px;outline:none;font-family:'Inter',sans-serif;transition:border-color .15s}
 .mf input:focus{border-color:var(--acc)}
 .egrid{display:flex;flex-wrap:wrap;gap:8px}
 .eopt{width:36px;height:36px;border-radius:8px;border:1px solid var(--brd2);background:var(--surf2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
@@ -143,28 +156,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
   </div>
 </nav>
 
+<!-- Hidden file inputs completely outside the zones -->
+<input type="file" id="fi1" accept=".xlsx,.xls" style="display:none">
+<input type="file" id="fi2" accept=".xlsx,.xls" style="display:none">
+
 <!-- UPLOAD -->
 <div id="sUp">
   <div class="upload-title">Analiza tus gastos</div>
   <div class="upload-sub">Sube tus extractos BBVA y la IA clasificará tus gastos automáticamente</div>
   <div class="upload-grid">
-    <div class="uzone" id="z1" onclick="document.getElementById('fi1').click()">
+    <div class="uzone" id="z1">
       <div class="uz-chk" id="ck1">✓</div>
       <div class="uz-ico">💳</div>
       <div class="uz-lbl">Cuenta corriente</div>
-      <div class="uz-sub">Gastos, pagos, bizum · haz clic para subir</div>
+      <div class="uz-sub">Gastos, pagos, bizum</div>
+      <button class="upload-btn" onclick="document.getElementById('fi1').click()">Seleccionar archivo</button>
       <div class="uz-fn" id="fn1"></div>
     </div>
-    <div class="uzone" id="z2" onclick="document.getElementById('fi2').click()">
+    <div class="uzone" id="z2">
       <div class="uz-chk" id="ck2">✓</div>
       <div class="uz-ico">🏦</div>
       <div class="uz-lbl">Cuenta ahorro / nómina</div>
-      <div class="uz-sub">Ingresos, nómina · haz clic para subir</div>
+      <div class="uz-sub">Ingresos, nómina</div>
+      <button class="upload-btn" onclick="document.getElementById('fi2').click()">Seleccionar archivo</button>
       <div class="uz-fn" id="fn2"></div>
     </div>
   </div>
-  <input type="file" id="fi1" style="display:none" accept=".xlsx,.xls" onchange="handleFile(this,1)"/>
-  <input type="file" id="fi2" style="display:none" accept=".xlsx,.xls" onchange="handleFile(this,2)"/>
   <div class="api-block">
     <div class="api-hdr">
       <span>Clave API Anthropic — clasificación con IA (opcional)</span>
@@ -231,397 +248,459 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
 </div>
 
 <script>
-// THEME
-let theme=localStorage.getItem('t')||'dark';
-function applyTh(){document.documentElement.setAttribute('data-theme',theme);document.getElementById('tbtn').textContent=theme==='dark'?'☀️':'🌙';if(chInst)drawChart();}
-function toggleTheme(){theme=theme==='dark'?'light':'dark';localStorage.setItem('t',theme);applyTh();}
+// ── THEME ──────────────────────────────────────────────────────────────────
+// ── ALL STATE VARS declared first to avoid TDZ errors ──────────────────────
+let f1 = null, f2 = null, chInst = null;
+let txM = [], txS = [], allTx = [];
+let selMon = 'all', showAll = false, pending = [];
+let selEmo = '🐾';
+
+let theme = localStorage.getItem('t') || 'dark';
+function applyTh() {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('tbtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+  if (chInst) drawChart();
+}
+function toggleTheme() { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('t', theme); applyTh(); }
 applyTh();
 
-// CATEGORIES
-const DCAT={
-  "Restaurantes":{color:"#ff6b6b",bg:"rgba(255,107,107,.12)",icon:"🍽️"},
-  "Supermercado":{color:"#00d4aa",bg:"rgba(0,212,170,.12)",icon:"🛒"},
-  "Transporte":{color:"#6c63ff",bg:"rgba(108,99,255,.12)",icon:"🚇"},
-  "Ocio":{color:"#a855f7",bg:"rgba(168,85,247,.12)",icon:"🎭"},
-  "Deporte":{color:"#22d3ee",bg:"rgba(34,211,238,.12)",icon:"🏃"},
-  "Salud":{color:"#f472b6",bg:"rgba(244,114,182,.12)",icon:"💊"},
-  "Ropa":{color:"#fb923c",bg:"rgba(251,146,60,.12)",icon:"👗"},
-  "Hogar":{color:"#94a3b8",bg:"rgba(148,163,184,.12)",icon:"🏠"},
-  "Alquiler":{color:"#f59e0b",bg:"rgba(245,158,11,.12)",icon:"🔑"},
-  "Seguros":{color:"#86efac",bg:"rgba(134,239,172,.12)",icon:"🛡️"},
-  "Educación":{color:"#818cf8",bg:"rgba(129,140,248,.12)",icon:"📚"},
-  "Servicios":{color:"#64748b",bg:"rgba(100,116,139,.12)",icon:"⚙️"},
-  "Nómina":{color:"#00d4aa",bg:"rgba(0,212,170,.12)",icon:"💵"},
-  "Ahorro":{color:"#6c63ff",bg:"rgba(108,99,255,.12)",icon:"🏦"},
-  "Otros":{color:"#475569",bg:"rgba(71,85,105,.12)",icon:"❓"}
+// ── CATEGORIES ─────────────────────────────────────────────────────────────
+const DCAT = {
+  "Restaurantes": {color:"#ff6b6b", bg:"rgba(255,107,107,.12)", icon:"🍽️"},
+  "Supermercado": {color:"#00d4aa", bg:"rgba(0,212,170,.12)",   icon:"🛒"},
+  "Transporte":   {color:"#6c63ff", bg:"rgba(108,99,255,.12)",  icon:"🚇"},
+  "Ocio":         {color:"#a855f7", bg:"rgba(168,85,247,.12)",  icon:"🎭"},
+  "Deporte":      {color:"#22d3ee", bg:"rgba(34,211,238,.12)",  icon:"🏃"},
+  "Salud":        {color:"#f472b6", bg:"rgba(244,114,182,.12)", icon:"💊"},
+  "Ropa":         {color:"#fb923c", bg:"rgba(251,146,60,.12)",  icon:"👗"},
+  "Hogar":        {color:"#94a3b8", bg:"rgba(148,163,184,.12)", icon:"🏠"},
+  "Alquiler":     {color:"#f59e0b", bg:"rgba(245,158,11,.12)",  icon:"🔑"},
+  "Seguros":      {color:"#86efac", bg:"rgba(134,239,172,.12)", icon:"🛡️"},
+  "Educación":    {color:"#818cf8", bg:"rgba(129,140,248,.12)", icon:"📚"},
+  "Servicios":    {color:"#64748b", bg:"rgba(100,116,139,.12)", icon:"⚙️"},
+  "Nómina":       {color:"#00d4aa", bg:"rgba(0,212,170,.12)",   icon:"💵"},
+  "Otros":        {color:"#475569", bg:"rgba(71,85,105,.12)",   icon:"❓"}
 };
-let CAT=JSON.parse(localStorage.getItem('cats')||'null')||{...DCAT};
-const saveC=()=>localStorage.setItem('cats',JSON.stringify(CAT));
+let CAT = JSON.parse(localStorage.getItem('cats') || 'null') || {...DCAT};
+const saveC = () => localStorage.setItem('cats', JSON.stringify(CAT));
 
-const KW={
-  "Nómina":["nòmina","nomina","abonament de nòmina","mango mng","sou","salari"],
-  "Alquiler":["mar elgarrista","marc mar elgarrista","elgarrista otalora","febrer mar","marc elgarrista"],
-  "Seguros":["allianz","mapfre","axa","generali","assegurances","seguro mar","segur"],
+const KW = {
+  "Nómina":      ["nòmina","nomina","abonament de nòmina","mango mng","sou","salari"],
+  "Alquiler":    ["mar elgarrista","marc mar elgarrista","elgarrista otalora","febrer mar","marc elgarrista"],
+  "Seguros":     ["allianz","mapfre","axa","generali","assegurances","seguro mar","segur"],
   "Restaurantes":["restaurant","cafeteria","cafe ","bar ","llull","toscana","mahjabeen","hadar","kakigori","pollos","hort de sant","ramen","pizz","burger","sushi","kebab","mcdonalds","starbucks","dunkin","kit kat"],
   "Supermercado":["supermercat","mercadona","carrefour","lidl","aldi","eroski","consum","el corte","dia ","alcampo","condis","superm","c. supermercat"],
-  "Transporte":["renfe","fgc","tmb","metro ","bus ","taxi","uber","cabify","parking","estacionament","gasolina","repsol","cepsa","transraid","peaje","autopista","rodalies","b pr trav","trav de gracia"],
-  "Ocio":["cinema","cine","netflix","spotify","hbo","disney","twitch","steam","playstation","padel","bowling","concierto","teatre","museu","amazon","amzn","www.amazon","escaperoos","classpass"],
-  "Deporte":["pilates","gym","fitness","decathlon","intersport","running","futbol","piscina","classpass"],
-  "Salud":["farmacia","parafarmacia","dentist","medic","clinic","hospital","laboratori","fisioterap","sanitas","adeslas"],
-  "Ropa":["zara","h&m","primark","pull&bear","bershka","stradivarius","nike","adidas","sprinter","natura "],
-  "Hogar":["ikea","leroy","bricomart","ferreteria","endesa","iberdrola","naturgy","comunitat","comunidad"],
-  "Educación":["academia","escola","universitat","udemy","coursera","papeleria","llibreria"],
-  "Servicios":["paypal","apple","google","microsoft","vodafone","movistar","orange","correos","ajuntament","ajunt","impost","liquidaci"]
+  "Transporte":  ["renfe","fgc","tmb","metro ","bus ","taxi","uber","cabify","parking","estacionament","gasolina","repsol","cepsa","transraid","peaje","autopista","rodalies","b pr trav","trav de gracia"],
+  "Ocio":        ["cinema","cine","netflix","spotify","hbo","disney","twitch","steam","playstation","padel","bowling","concierto","teatre","museu","amazon","amzn","www.amazon","escaperoos","classpass"],
+  "Deporte":     ["pilates","gym","fitness","decathlon","intersport","running","futbol","piscina","classpass"],
+  "Salud":       ["farmacia","parafarmacia","dentist","medic","clinic","hospital","laboratori","fisioterap","sanitas","adeslas"],
+  "Ropa":        ["zara","h&m","primark","pull&bear","bershka","stradivarius","nike","adidas","sprinter","natura "],
+  "Hogar":       ["ikea","leroy","bricomart","ferreteria","endesa","iberdrola","naturgy","comunitat","comunidad"],
+  "Educación":   ["academia","escola","universitat","udemy","coursera","papeleria","llibreria"],
+  "Servicios":   ["paypal","apple","google","microsoft","vodafone","movistar","orange","correos","ajuntament","ajunt","impost","liquidaci"]
 };
 
-function classify(c,m,o){
-  const t=(c+' '+m+' '+o).toLowerCase();
-  for(const[k,ws]of Object.entries(KW)){if(ws.some(w=>t.includes(w)))return k;}
+function classify(c, m, o) {
+  const t = (c + ' ' + m + ' ' + o).toLowerCase();
+  for (const [k, ws] of Object.entries(KW)) {
+    if (ws.some(w => t.includes(w))) return k;
+  }
   return null;
 }
 
-// PARSER
-function parseXLSX(data){
-  const wb=XLSX.read(data,{type:'array'});
-  const ws=wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-  let hr=-1;
-  for(let i=0;i<rows.length;i++){
-    const r=rows[i];
-    const hD=r.some(c=>/^data$/i.test(String(c).trim()));
-    const hI=r.some(c=>/^import/i.test(String(c).trim()));
-    if(hD&&hI){hr=i;break;}
+// ── PARSER ─────────────────────────────────────────────────────────────────
+function parseXLSX(data) {
+  const wb   = XLSX.read(data, {type: 'array'});
+  const ws   = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+
+  // Find header row: has both "Data" and "Import" columns
+  let hr = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.some(c => /^data$/i.test(String(c).trim())) &&
+        r.some(c => /^import/i.test(String(c).trim()))) { hr = i; break; }
   }
-  if(hr<0)for(let i=0;i<rows.length;i++){if(rows[i].filter(c=>String(c).trim()).length>=5){hr=i;break;}}
-  if(hr<0)return[];
-  const h=rows[hr].map(c=>String(c).trim().toLowerCase());
-  const fi=ns=>{for(const n of ns){const i=h.indexOf(n);if(i>=0)return i;}return -1;};
-  const iI=fi(['import','importe']),iD=fi(['data','fecha']),iC=fi(['concepte','concepto']),iM=fi(['moviment','movimiento']),iO=fi(['observacions','observaciones']);
-  const CI=iI>=0?iI:5,CD=iD>=0?iD:2,CC=iC>=0?iC:3,CM=iM>=0?iM:4,CO=iO>=0?iO:9;
-  const out=[];
-  for(let i=hr+1;i<rows.length;i++){
-    const r=rows[i];
-    const amt=parseFloat(String(r[CI]??'').replace(',','.').trim());
-    if(isNaN(amt))continue;
-    const c=String(r[CC]??'').trim();
-    if(!c||c.length<2)continue;
-    out.push({id:i*1000+Math.random(),date:String(r[CD]??'').trim(),concepte:c.toLowerCase(),moviment:String(r[CM]??'').trim().toLowerCase(),observacions:String(r[CO]??'').trim().toLowerCase(),import:amt,category:null,source:'main'});
+  // Fallback: first row with 5+ non-empty cells
+  if (hr < 0) for (let i = 0; i < rows.length; i++) {
+    if (rows[i].filter(c => String(c).trim()).length >= 5) { hr = i; break; }
+  }
+  if (hr < 0) return [];
+
+  const h  = rows[hr].map(c => String(c).trim().toLowerCase());
+  const fi = ns => { for (const n of ns) { const i = h.indexOf(n); if (i >= 0) return i; } return -1; };
+  const CI = fi(['import','importe']); const CD = fi(['data','fecha']);
+  const CC = fi(['concepte','concepto']); const CM = fi(['moviment','movimiento']);
+  const CO = fi(['observacions','observaciones']);
+  const iI = CI>=0?CI:5, iD=CD>=0?CD:2, iC=CC>=0?CC:3, iM=CM>=0?CM:4, iO=CO>=0?CO:9;
+
+  const out = [];
+  for (let i = hr + 1; i < rows.length; i++) {
+    const r   = rows[i];
+    const amt = parseFloat(String(r[iI] ?? '').replace(',', '.').trim());
+    if (isNaN(amt)) continue;
+    const c = String(r[iC] ?? '').trim();
+    if (!c || c.length < 2) continue;
+    out.push({
+      id: i * 1000 + Math.random(),
+      date: String(r[iD] ?? '').trim(),
+      concepte: c.toLowerCase(),
+      moviment: String(r[iM] ?? '').trim().toLowerCase(),
+      observacions: String(r[iO] ?? '').trim().toLowerCase(),
+      import: amt, category: null, source: 'main'
+    });
   }
   return out;
 }
 
-function isTraspas(c,m){
-  // Skip ANYTHING with traspàs/traspas in the concept, or redondeo in moviment
-  if(/traspas/i.test(c)||/traspàs/i.test(c))return true;
-  if(/redondeo/i.test(m))return true;
-  if(/liquidaci/i.test(c)&&/interessos/i.test(c))return true;
-  if(/embargament/i.test(c))return true;
+function isTraspas(c, m) {
+  if (/traspas/i.test(c) || /traspàs/i.test(c)) return true;
+  if (/redondeo/i.test(m)) return true;
+  if (/liquidaci/i.test(c) && /interessos/i.test(c)) return true;
+  if (/embargament/i.test(c)) return true;
   return false;
 }
 
-// STATE
-let txM=[],txS=[],allTx=[];
-let selMon='all',showAll=false,pending=[];
-let f1=null,f2=null,chInst=null;
-const EMOJIS=['🐾','🚀','🎮','🎵','🍕','🏖️','✈️','🎁','💻','📱','🌿','🍺','🎂','🐶','🐱','🎨','🏡','⚡','🛁','🧹','💈','🎓','🔧','🌮','☕','🧴','🎤','💎','🏋️','🎯'];
-let selEmo='🐾';
+// ── STATE ──────────────────────────────────────────────────────────────────
+const EMOJIS = ['🐾','🚀','🎮','🎵','🍕','🏖️','✈️','🎁','💻','📱','🌿','🍺','🎂','🐶','🐱','🎨','🏡','⚡','🛁','🧹','💈','🎓','🔧','🌮','☕','🧴','🎤','💎','🏋️','🎯'];
 
-// FILE UPLOAD
-// Inputs have onchange="handleFile(this,N)" directly in HTML — most reliable approach
-function handleFile(input, slot) {
-  const f = input.files[0];
-  if (!f) return;
-  const ids = slot===1 ? ['fn1','ck1','z1'] : ['fn2','ck2','z2'];
-  loadFile(f, slot, ids[0], ids[1], ids[2]);
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function toast(msg, ok = true) {
+  // Remove existing
+  document.querySelectorAll('.toast').forEach(el => el.remove());
+  const el = document.createElement('div');
+  el.className = 'toast ' + (ok ? 'ok' : 'err');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 400); }, 3000);
 }
 
-// Drag & drop
-['z1','z2'].forEach((zid, i) => {
+// ── FILE UPLOAD ─────────────────────────────────────────────────────────────
+// Wire up the hidden inputs directly — no label, no tricks
+document.getElementById('fi1').addEventListener('change', function() {
+  if (this.files[0]) readFile(this.files[0], 1, 'fn1', 'ck1', 'z1');
+});
+document.getElementById('fi2').addEventListener('change', function() {
+  if (this.files[0]) readFile(this.files[0], 2, 'fn2', 'ck2', 'z2');
+});
+
+// Drag & drop on the zones
+['z1','z2'].forEach((zid, idx) => {
   const z = document.getElementById(zid);
-  const slot = i + 1;
   z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag'); });
   z.addEventListener('dragleave', () => z.classList.remove('drag'));
   z.addEventListener('drop', e => {
-    e.preventDefault(); z.classList.remove('drag');
+    e.preventDefault();
+    z.classList.remove('drag');
     const f = e.dataTransfer.files[0];
-    if (!f) return;
-    const ids = slot===1 ? ['fn1','ck1','z1'] : ['fn2','ck2','z2'];
-    loadFile(f, slot, ids[0], ids[1], ids[2]);
+    if (f) readFile(f, idx + 1, `fn${idx+1}`, `ck${idx+1}`, zid);
   });
 });
 
-function countRows(data) {
+function countTx(data) {
   try {
-    const wb = XLSX.read(data, {type:'array'});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-    // Find header row and count data rows after it
+    const wb   = XLSX.read(data, {type: 'array'});
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
     let hr = -1;
-    for(let i=0;i<rows.length;i++){
-      if(rows[i].some(c=>/^data$/i.test(String(c).trim()))&&rows[i].some(c=>/^import/i.test(String(c).trim()))){hr=i;break;}
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].some(c => /^data$/i.test(String(c).trim())) &&
+          rows[i].some(c => /^import/i.test(String(c).trim()))) { hr = i; break; }
     }
-    if(hr<0) return rows.length;
-    // Count rows with a valid amount
-    let n=0;
-    for(let i=hr+1;i<rows.length;i++){
-      const r=rows[i];
-      // find import col
-      const hdr=rows[hr].map(c=>String(c).trim().toLowerCase());
-      const iI=hdr.findIndex(c=>/^import/i.test(c));
-      const CI=iI>=0?iI:5;
-      const amt=parseFloat(String(r[CI]??'').replace(',','.').trim());
-      if(!isNaN(amt)) n++;
+    if (hr < 0) return rows.length;
+    const h  = rows[hr].map(c => String(c).trim().toLowerCase());
+    const iI = h.findIndex(c => /^import/i.test(c));
+    const CI = iI >= 0 ? iI : 5;
+    let n = 0;
+    for (let i = hr + 1; i < rows.length; i++) {
+      if (!isNaN(parseFloat(String(rows[i][CI] ?? '').replace(',', '.').trim()))) n++;
     }
     return n;
   } catch(e) { return '?'; }
 }
 
-function showToast(msg, ok=true) {
-  let t = document.getElementById('toast');
-  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
-  t.textContent = msg;
-  t.style.cssText = `position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(${ok?'0':'0'});background:${ok?'var(--grn)':'var(--red)'};color:${ok?'#000':'#fff'};padding:12px 24px;border-radius:40px;font-size:13px;font-weight:600;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:opacity .4s;opacity:1;font-family:Inter,sans-serif`;
-  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 3000);
-}
-
-function loadFile(file, slot, fnid, ckid, zid) {
+function readFile(file, slot, fnid, ckid, zid) {
   const rd = new FileReader();
   rd.onload = ev => {
     const data = new Uint8Array(ev.target.result);
     if (slot === 1) f1 = data;
     else            f2 = data;
-    const rows = countRows(data);
-    document.getElementById(fnid).textContent = file.name;
+    const n = countTx(data);
+    const shortName = file.name.length > 28 ? file.name.slice(0, 28) + '…' : file.name;
+    document.getElementById(fnid).textContent = shortName;
     document.getElementById(zid).classList.add('done');
     document.getElementById(ckid).style.display = 'flex';
     document.getElementById('abtn').disabled = !f1 && !f2;
-    showToast(`✓ ${file.name.length>25?file.name.slice(0,25)+'…':file.name} — ${rows} transacciones`);
+    toast(`✓ Archivo cargado · ${n} filas encontradas`);
   };
-  rd.onerror = () => showToast('Error leyendo el fichero', false);
+  rd.onerror = () => toast('❌ Error al leer el archivo', false);
   rd.readAsArrayBuffer(file);
 }
 
-
-
-// STEPS
-function setStep(n){
-  ['st1','st2','st3'].forEach((id,i)=>{
-    document.getElementById(id).className='step'+(i<n-1?' done':i===n-1?' act':'');
+// ── STEPS ──────────────────────────────────────────────────────────────────
+function setStep(n) {
+  ['st1','st2','st3'].forEach((id, i) => {
+    document.getElementById(id).className = 'step' + (i < n-1 ? ' done' : i === n-1 ? ' act' : '');
   });
-  document.getElementById('llbl').textContent=['','Leyendo archivos...','Clasificando...','Analizando con IA...'][n]||'';
+  document.getElementById('llbl').textContent = ['','Leyendo archivos...','Clasificando...','Analizando con IA...'][n] || '';
 }
 
-// MAIN ANALYSIS
-async function go(){
-  const ak=document.getElementById('apiKey').value.trim();
+// ── MAIN ANALYSIS ───────────────────────────────────────────────────────────
+async function go() {
+  const ak = document.getElementById('apiKey').value.trim();
   document.getElementById('sUp').classList.add('hidden');
   document.getElementById('sLoad').classList.remove('hidden');
-  try{
+  try {
     setStep(1);
-    const rawM=f1?parseXLSX(f1):[];
-    const rawS=f2?parseXLSX(f2):[];
-    console.log('Parsed main:',rawM.length,'savings:',rawS.length);
+    const rawM = f1 ? parseXLSX(f1) : [];
+    const rawS = f2 ? parseXLSX(f2) : [];
 
     setStep(2);
 
-    // Main account
-    txM=rawM.filter(t=>!isTraspas(t.concepte,t.moviment));
-    txM.forEach(t=>{
-      const txt=t.concepte+' '+t.moviment+' '+t.observacions;
-      if(/elgarrista/i.test(txt)&&t.import<0){t.category='Alquiler';return;}
-      const c=classify(t.concepte,t.moviment,t.observacions);
-      if(c)t.category=c;
+    // Main account: filter all traspasos
+    txM = rawM.filter(t => !isTraspas(t.concepte, t.moviment));
+    txM.forEach(t => {
+      const txt = t.concepte + ' ' + t.moviment + ' ' + t.observacions;
+      if (/elgarrista/i.test(txt) && t.import < 0) { t.category = 'Alquiler'; return; }
+      const c = classify(t.concepte, t.moviment, t.observacions);
+      if (c) t.category = c;
     });
-    console.log('txMain classified:',txM.length);
 
-    // Savings account
-    const rawS2=rawS.filter(t=>!isTraspas(t.concepte,t.moviment));
-    txS=rawS2.map(t=>({...t,source:'savings'}));
-    txS.forEach(t=>{
-      const txt=t.concepte+' '+t.moviment+' '+t.observacions;
-      // Nómina
-      if(/abonament.*nom/i.test(txt)||/mango\s+mng/i.test(txt)){
-        t.category='Nómina';
-        const p=t.date.split('/');
-        if(p.length===3){let m=+p[1]+1,y=+p[2];if(m>12){m=1;y++;}t.bm=`${y}-${String(m).padStart(2,'0')}`;}
+    // Savings account: filter traspasos
+    txS = rawS.filter(t => !isTraspas(t.concepte, t.moviment)).map(t => ({...t, source: 'savings'}));
+    txS.forEach(t => {
+      const txt = t.concepte + ' ' + t.moviment + ' ' + t.observacions;
+      if (/abonament.*nom/i.test(txt) || /mango\s*mng/i.test(txt)) {
+        t.category = 'Nómina';
+        const p = t.date.split('/');
+        if (p.length === 3) {
+          let m = +p[1] + 1, y = +p[2];
+          if (m > 12) { m = 1; y++; }
+          t.bm = `${y}-${String(m).padStart(2, '0')}`;
+        }
         return;
       }
-      // (Traspas already filtered at parse time)
-      // Alquiler
-      if(/elgarrista/i.test(txt)&&t.import<0){t.category='Alquiler';return;}
-      // Seguro
-      if(/seguro/i.test(txt)&&t.import<0){t.category='Seguros';return;}
-      const c=classify(t.concepte,t.moviment,t.observacions);
-      if(c)t.category=c;
+      if (/elgarrista/i.test(txt) && t.import < 0) { t.category = 'Alquiler'; return; }
+      if (/seguro/i.test(txt) && t.import < 0) { t.category = 'Seguros'; return; }
+      const c = classify(t.concepte, t.moviment, t.observacions);
+      if (c) t.category = c;
     });
-    console.log('txSavings classified:',txS.length);
 
-    if(ak){setStep(3);await runAI([...txM,...txS].filter(t=>!t.category),ak);}
+    if (ak) { setStep(3); await runAI([...txM, ...txS].filter(t => !t.category), ak); }
 
-    allTx=[...txM,...txS];
-    console.log('allTx total:',allTx.length);
-    pending=allTx.filter(t=>(!t.category||t.category==='Otros')&&t.import<0&&Math.abs(t.import)>3).slice(0,8);
+    allTx   = [...txM, ...txS];
+    pending = allTx.filter(t => (!t.category || t.category === 'Otros') && t.import < 0 && Math.abs(t.import) > 3).slice(0, 8);
 
     document.getElementById('sLoad').classList.add('hidden');
     doAsk();
-  }catch(e){
+  } catch(e) {
     document.getElementById('sLoad').classList.add('hidden');
     document.getElementById('sUp').classList.remove('hidden');
-    document.getElementById('errArea').innerHTML=`<div class="aerr">Error: ${e.message}</div>`;
-    console.error(e);
+    document.getElementById('errArea').innerHTML = `<div class="aerr">Error: ${e.message}</div>`;
+      }
+}
+
+// ── AI ──────────────────────────────────────────────────────────────────────
+async function runAI(txs, ak) {
+  if (!txs.length || !ak) return;
+  const cats = Object.keys(CAT).join(', ');
+  for (let i = 0; i < txs.length; i += 40) {
+    const b     = txs.slice(i, i + 40);
+    const items = b.map(t => `${t.id}|${t.concepte}|${t.moviment}|${t.import}€`).join('\n');
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:800,
+          messages:[{role:'user', content:`Clasifica en: ${cats}\n${items}\nJSON: [{"id":"X","cat":"Y"}]`}]})
+      });
+      const d   = await res.json();
+      const txt = (d.content?.[0]?.text || '[]').replace(/```json|```/g, '').trim();
+      let rs = []; try { rs = JSON.parse(txt); } catch(e) {}
+      rs.forEach(r => { const t = b.find(t => String(t.id) === String(r.id)); if (t && r.cat && CAT[r.cat]) t.category = r.cat; });
+    } catch(e) { console.warn('AI err', e); }
   }
 }
 
-// AI
-async function runAI(txs,ak){
-  if(!txs.length||!ak)return;
-  const cats=Object.keys(CAT).join(', ');
-  for(let i=0;i<txs.length;i+=40){
-    const b=txs.slice(i,i+40);
-    const items=b.map(t=>`${t.id}|${t.concepte}|${t.moviment}|${t.import}€`).join('\n');
-    try{
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,
-          messages:[{role:'user',content:`Clasifica en: ${cats}\n${items}\nJSON: [{"id":"X","cat":"Y"}]`}]})});
-      const d=await res.json();
-      const txt=(d.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim();
-      let rs=[];try{rs=JSON.parse(txt);}catch(e){}
-      rs.forEach(r=>{const t=b.find(t=>String(t.id)===String(r.id));if(t&&r.cat&&CAT[r.cat])t.category=r.cat;});
-    }catch(e){console.warn('AI err',e);}
-  }
-}
-
-// ASK
-function doAsk(){
-  const rem=pending.filter(t=>!t.category||t.category==='Otros');
-  const el=document.getElementById('sAsk');
-  if(!rem.length){el.classList.add('hidden');render();return;}
-  const t=rem[0];
-  const done=pending.length-rem.length;
-  const pct=Math.round(done/pending.length*100);
-  const cats=Object.keys(CAT).filter(c=>!['Nómina','Ahorro'].includes(c));
+// ── ASK ─────────────────────────────────────────────────────────────────────
+function doAsk() {
+  const rem = pending.filter(t => !t.category || t.category === 'Otros');
+  const el  = document.getElementById('sAsk');
+  if (!rem.length) { el.classList.add('hidden'); render(); return; }
+  const t    = rem[0];
+  const done = pending.length - rem.length;
+  const pct  = Math.round(done / pending.length * 100);
+  const cats = Object.keys(CAT).filter(c => c !== 'Nómina');
   el.classList.remove('hidden');
-  el.innerHTML=`<div class="ask-panel">
+  el.innerHTML = `<div class="ask-panel">
     <div class="ask-eye">Necesito tu ayuda</div>
     <div class="ask-row">
       <div><div class="ask-nm">${cap(t.concepte)}</div><div class="ask-mt">${Math.abs(t.import).toFixed(2)}€ · ${t.date}</div></div>
-      <div style="text-align:right"><div style="font-size:10px;color:var(--txt3)">${done}/${pending.length}</div>
-        <div class="ask-pb"><div class="ask-pf" style="width:${pct}%"></div></div></div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--txt3)">${done}/${pending.length}</div>
+        <div class="ask-pb"><div class="ask-pf" style="width:${pct}%"></div></div>
+      </div>
     </div>
-    <div class="ask-opts">${cats.map(c=>`<button class="aopt" onclick="pick('${t.id}','${c}')">${CAT[c].icon} ${c}</button>`).join('')}</div>
+    <div class="ask-opts">${cats.map(c => `<button class="aopt" onclick="pick('${t.id}','${c}')">${CAT[c].icon} ${c}</button>`).join('')}</div>
   </div>`;
   render();
 }
-function pick(id,cat){
-  const t=allTx.find(t=>String(t.id)===String(id));
-  if(t)t.category=cat;
+function pick(id, cat) {
+  const t = allTx.find(t => String(t.id) === String(id));
+  if (t) t.category = cat;
   doAsk();
 }
 
-// RENDER
-const em=t=>t.bm||mk(t.date);
+// ── RENDER ──────────────────────────────────────────────────────────────────
+const em = t => t.bm || mk(t.date);
 
-function render(){
+function render() {
   document.getElementById('sRes').classList.remove('hidden');
-  const months=[...new Set(allTx.map(em))].filter(m=>m!=='unknown').sort().reverse();
-  const tabs=document.getElementById('mtabs');
-  tabs.innerHTML=`<button class="mtab ${selMon==='all'?'act':''}" onclick="sm('all')">Todos</button>`
-    +months.map(m=>`<button class="mtab ${selMon===m?'act':''}" onclick="sm('${m}')">${ml(m)}</button>`).join('');
+  const months = [...new Set(allTx.map(em))].filter(m => m !== 'unknown').sort().reverse();
 
-  const txs=selMon==='all'?allTx:allTx.filter(t=>em(t)===selMon);
-  const gas=txs.filter(t=>t.import<0&&t.source==='main');
-  const ing=txs.filter(t=>t.category==='Nómina'&&t.import>0);
-  const aho=[];
-  const tG=gas.reduce((s,t)=>s+Math.abs(t.import),0);
-  const tI=ing.reduce((s,t)=>s+t.import,0);
-  const tA=aho.reduce((s,t)=>s+Math.abs(t.import),0);
+  // Tabs
+  document.getElementById('mtabs').innerHTML =
+    `<button class="mtab ${selMon==='all'?'act':''}" onclick="sm('all')">Todos</button>` +
+    months.map(m => `<button class="mtab ${selMon===m?'act':''}" onclick="sm('${m}')">${ml(m)}</button>`).join('');
 
-  document.getElementById('rtitle').textContent=selMon==='all'?'Resumen total':`Resumen ${ml(selMon)}`;
-  document.getElementById('rsub').textContent=`${txs.length} transacciones · ${months.length} ${months.length===1?'mes':'meses'}`;
+  const txs = selMon === 'all' ? allTx : allTx.filter(t => em(t) === selMon);
+  const gas = txs.filter(t => t.import < 0 && t.source === 'main');
+  const ing = txs.filter(t => t.category === 'Nómina' && t.import > 0);
+  const tG  = gas.reduce((s, t) => s + Math.abs(t.import), 0);
+  const tI  = ing.reduce((s, t) => s + t.import, 0);
 
-  const hS=txS.length>0;
-  document.getElementById('stats').innerHTML=hS
-    ?`<div class="sgrid"><div class="scard rc"><div class="slbl">Gastado</div><div class="sval r">${fmt(tG)}</div><div class="sglow"></div></div><div class="scard gc"><div class="slbl">Ingresos</div><div class="sval g">${fmt(tI)}</div><div class="sglow"></div></div><div class="scard ac"><div class="slbl">Ahorro</div><div class="sval a">${fmt(tA)}</div><div class="sglow"></div></div></div>`
-    :`<div class="sgrid"><div class="scard rc"><div class="slbl">Gastado</div><div class="sval r">${fmt(tG)}</div><div class="sglow"></div></div><div class="scard"><div class="slbl">Transacciones</div><div class="sval">${gas.length}</div></div><div class="scard"><div class="slbl">Media/día</div><div class="sval">${fmt(tG/Math.max(ds(txs),1))}</div></div></div>`;
+  document.getElementById('rtitle').textContent = selMon === 'all' ? 'Resumen total' : `Resumen ${ml(selMon)}`;
+  document.getElementById('rsub').textContent   = `${txs.length} transacciones · ${months.length} ${months.length===1?'mes':'meses'}`;
+
+  const hS = txS.length > 0;
+  document.getElementById('stats').innerHTML = hS
+    ? `<div class="sgrid">
+        <div class="scard rc"><div class="slbl">Gastado</div><div class="sval r">${fmt(tG)}</div><div class="sglow"></div></div>
+        <div class="scard gc"><div class="slbl">Ingresos (nómina)</div><div class="sval g">${fmt(tI)}</div><div class="sglow"></div></div>
+        <div class="scard ac"><div class="slbl">Balance</div><div class="sval a">${fmt(tI - tG)}</div><div class="sglow"></div></div>
+       </div>`
+    : `<div class="sgrid">
+        <div class="scard rc"><div class="slbl">Gastado</div><div class="sval r">${fmt(tG)}</div><div class="sglow"></div></div>
+        <div class="scard"><div class="slbl">Transacciones</div><div class="sval">${gas.length}</div></div>
+        <div class="scard"><div class="slbl">Media/día</div><div class="sval">${fmt(tG/Math.max(dayspan(txs),1))}</div></div>
+       </div>`;
 
   drawChart();
 
-  const byCat={};
-  gas.forEach(t=>{const c=t.category||'Otros';byCat[c]=(byCat[c]||0)+Math.abs(t.import);});
-  const sorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-  const mx=sorted[0]?.[1]||1;
-  document.getElementById('cattot').textContent=`${fmt(tG)} total`;
-  document.getElementById('clist').innerHTML=sorted.map(([cat,amt])=>{
-    const c=CAT[cat]||CAT['Otros'];
-    const p=tG>0?(amt/tG*100).toFixed(0):0;
-    return `<div class="crow"><div class="cico" style="background:${c.bg}">${c.icon}</div><span class="cnm">${cat}</span><div class="cbar"><div class="cfill" style="width:${(amt/mx*100).toFixed(1)}%;background:${c.color}"></div></div><div class="cr"><span class="camt">${fmt(amt)}</span><span class="cpct">${p}%</span></div></div>`;
+  // Categories
+  const byCat = {};
+  gas.forEach(t => { const c = t.category || 'Otros'; byCat[c] = (byCat[c]||0) + Math.abs(t.import); });
+  const sorted = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const mx = sorted[0]?.[1] || 1;
+  document.getElementById('cattot').textContent = `${fmt(tG)} total`;
+  document.getElementById('clist').innerHTML = sorted.map(([cat, amt]) => {
+    const c = CAT[cat] || CAT['Otros'];
+    const p = tG > 0 ? (amt / tG * 100).toFixed(0) : 0;
+    return `<div class="crow">
+      <div class="cico" style="background:${c.bg}">${c.icon}</div>
+      <span class="cnm">${cat}</span>
+      <div class="cbar"><div class="cfill" style="width:${(amt/mx*100).toFixed(1)}%;background:${c.color}"></div></div>
+      <div class="cr"><span class="camt">${fmt(amt)}</span><span class="cpct">${p}%</span></div>
+    </div>`;
   }).join('');
 
-  const vis=txs.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  const sh=showAll?vis:vis.slice(0,25);
-  document.getElementById('txcnt').textContent=`${vis.length} total`;
-  document.getElementById('txlist').innerHTML=sh.map(t=>{
-    const c=CAT[t.category||'Otros']||CAT['Otros'];
-    const nm=cap(t.concepte);
-    const sh2=nm.length>36?nm.slice(0,36)+'…':nm;
-    const bm=t.bm?` · presup ${ml(t.bm)}`:'';
-    return `<div class="txrow"><div class="txico" style="background:${c.bg}">${c.icon}</div><div class="txinfo"><div class="txnm" title="${nm}">${sh2}</div><div class="txmt">${t.date.slice(0,5)} · ${t.source==='savings'?'ahorro':'corriente'}${bm}</div></div><span class="txbdg" onclick="pcat('${t.id}')">${t.category||'?'}</span><span class="txamt ${t.import<0?'n':'p'}">${t.import>0?'+':''}${t.import.toFixed(2)}€</span></div>`;
-  }).join('')+(!showAll&&vis.length>25?`<button class="smore" onclick="showAll=true;render()">Ver ${vis.length-25} más</button>`:'');
+  // Transactions
+  const vis = txs.slice().sort((a, b) => b.date.localeCompare(a.date));
+  const sh  = showAll ? vis : vis.slice(0, 25);
+  document.getElementById('txcnt').textContent = `${vis.length} total`;
+  document.getElementById('txlist').innerHTML = sh.map(t => {
+    const c    = CAT[t.category||'Otros'] || CAT['Otros'];
+    const nm   = cap(t.concepte);
+    const short = nm.length > 36 ? nm.slice(0, 36) + '…' : nm;
+    const bmlbl = t.bm ? ` · presup ${ml(t.bm)}` : '';
+    return `<div class="txrow">
+      <div class="txico" style="background:${c.bg}">${c.icon}</div>
+      <div class="txinfo">
+        <div class="txnm" title="${nm}">${short}</div>
+        <div class="txmt">${t.date.slice(0,5)} · ${t.source==='savings'?'ahorro':'corriente'}${bmlbl}</div>
+      </div>
+      <span class="txbdg" onclick="pcat('${t.id}')">${t.category||'?'}</span>
+      <span class="txamt ${t.import<0?'n':'p'}">${t.import>0?'+':''}${t.import.toFixed(2)}€</span>
+    </div>`;
+  }).join('') + (!showAll && vis.length > 25 ? `<button class="smore" onclick="showAll=true;render()">Ver ${vis.length-25} más</button>` : '');
 }
 
-function sm(m){selMon=m;showAll=false;render();}
+function sm(m) { selMon = m; showAll = false; render(); }
 
-function pcat(id){
-  const t=allTx.find(t=>String(t.id)===String(id));
-  if(!t)return;
-  const cs=Object.keys(CAT);
-  const cur=t.category?cs.indexOf(t.category)+1:'';
-  const p=window.prompt(`Categoría:\n"${cap(t.concepte)}"\n\n${cs.map((c,i)=>`${i+1}. ${CAT[c].icon} ${c}`).join('\n')}\n\nNúmero (actual: ${cur}):`,cur);
-  const idx=parseInt(p)-1;
-  if(idx>=0&&idx<cs.length){t.category=cs[idx];render();}
+function pcat(id) {
+  const t   = allTx.find(t => String(t.id) === String(id));
+  if (!t) return;
+  const cs  = Object.keys(CAT);
+  const cur = t.category ? cs.indexOf(t.category) + 1 : '';
+  const p   = window.prompt(`Categoría para:\n"${cap(t.concepte)}"\n\n${cs.map((c,i)=>`${i+1}. ${CAT[c].icon} ${c}`).join('\n')}\n\nNúmero (actual: ${cur}):`, cur);
+  const idx = parseInt(p) - 1;
+  if (idx >= 0 && idx < cs.length) { t.category = cs[idx]; render(); }
 }
 
-// CHART
-function drawChart(){
-  const allM=[...new Set(allTx.map(em))].filter(m=>m!=='unknown').sort();
-  const bl=document.getElementById('chblock');
-  if(allM.length<2){bl.classList.add('hidden');return;}
+// ── CHART ───────────────────────────────────────────────────────────────────
+function drawChart() {
+  const allM = [...new Set(allTx.map(em))].filter(m => m !== 'unknown').sort();
+  const bl   = document.getElementById('chblock');
+  if (allM.length < 2) { bl.classList.add('hidden'); return; }
   bl.classList.remove('hidden');
-  const dk=theme==='dark';
-  const gr=dk?'rgba(255,255,255,.05)':'rgba(0,0,0,.06)';
-  const tc=dk?'#4a4a66':'#a0a0bc';
-  const dG=allM.map(m=>Math.round(allTx.filter(t=>em(t)===m&&t.import<0&&t.source==='main').reduce((s,t)=>s+Math.abs(t.import),0)));
-  const dI=allM.map(m=>Math.round(allTx.filter(t=>em(t)===m&&t.category==='Nómina'&&t.import>0).reduce((s,t)=>s+t.import,0)));
-  const dA=allM.map(m=>Math.round(allTx.filter(t=>em(t)===m&&t.category==='Ahorro'&&t.import<0).reduce((s,t)=>s+Math.abs(t.import),0)));
-  const ds=[{label:'Gastos',data:dG,borderColor:'#ff5c7c',backgroundColor:'rgba(255,92,124,.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#ff5c7c',tension:.4,fill:true}];
-  if(dI.some(v=>v>0))ds.push({label:'Ingresos',data:dI,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#00d4aa',tension:.4,fill:true});
-  if(dA.some(v=>v>0))ds.push({label:'Ahorro',data:dA,borderColor:'#6c63ff',backgroundColor:'rgba(108,99,255,.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#6c63ff',tension:.4,fill:true});
-  const ctx=document.getElementById('ch').getContext('2d');
-  if(chInst)chInst.destroy();
-  chInst=new Chart(ctx,{type:'line',data:{labels:allM.map(ml),datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',labels:{color:tc,font:{family:'Inter',size:11},boxWidth:12,padding:16,usePointStyle:true,pointStyle:'circle'}},tooltip:{backgroundColor:dk?'#1c1c26':'#fff',borderColor:dk?'rgba(255,255,255,.12)':'rgba(0,0,0,.1)',borderWidth:1,titleColor:dk?'#f0f0ff':'#0d0d1a',bodyColor:dk?'#8888aa':'#5a5a7a',padding:12,cornerRadius:10,callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es')}€`}}},scales:{x:{grid:{color:gr},ticks:{color:tc,font:{family:'Inter',size:11}}},y:{grid:{color:gr},ticks:{color:tc,font:{family:'Inter',size:11},callback:v=>v.toLocaleString('es')+'€'},beginAtZero:true}}}});
+  const dk = theme === 'dark';
+  const gr = dk ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.06)';
+  const tc = dk ? '#4a4a66' : '#a0a0bc';
+  const dG = allM.map(m => Math.round(allTx.filter(t => em(t)===m && t.import<0 && t.source==='main').reduce((s,t)=>s+Math.abs(t.import),0)));
+  const dI = allM.map(m => Math.round(allTx.filter(t => em(t)===m && t.category==='Nómina' && t.import>0).reduce((s,t)=>s+t.import,0)));
+  const ds  = [
+    {label:'Gastos',  data:dG, borderColor:'#ff5c7c', backgroundColor:'rgba(255,92,124,.08)', borderWidth:2, pointRadius:4, pointBackgroundColor:'#ff5c7c', tension:.4, fill:true}
+  ];
+  if (dI.some(v => v > 0)) ds.push({label:'Ingresos', data:dI, borderColor:'#00d4aa', backgroundColor:'rgba(0,212,170,.08)', borderWidth:2, pointRadius:4, pointBackgroundColor:'#00d4aa', tension:.4, fill:true});
+  const ctx = document.getElementById('ch').getContext('2d');
+  if (chInst) chInst.destroy();
+  chInst = new Chart(ctx, {
+    type: 'line', data: {labels: allM.map(ml), datasets: ds},
+    options: {responsive:true, maintainAspectRatio:false,
+      interaction: {mode:'index', intersect:false},
+      plugins: {
+        legend: {display:true, position:'top', labels:{color:tc, font:{family:'Inter',size:11}, boxWidth:12, padding:16, usePointStyle:true, pointStyle:'circle'}},
+        tooltip: {backgroundColor:dk?'#1c1c26':'#fff', borderColor:dk?'rgba(255,255,255,.12)':'rgba(0,0,0,.1)', borderWidth:1,
+          titleColor:dk?'#f0f0ff':'#0d0d1a', bodyColor:dk?'#8888aa':'#5a5a7a', padding:12, cornerRadius:10,
+          callbacks:{label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es')}€`}}
+      },
+      scales: {
+        x: {grid:{color:gr}, ticks:{color:tc, font:{family:'Inter',size:11}}},
+        y: {grid:{color:gr}, ticks:{color:tc, font:{family:'Inter',size:11}, callback:v=>v.toLocaleString('es')+'€'}, beginAtZero:true}
+      }
+    }
+  });
 }
 
-// MODAL
-function openM(){selEmo='🐾';document.getElementById('mname').value='';document.getElementById('mcolor').value='#6c63ff';document.getElementById('egrid').innerHTML=EMOJIS.map(e=>`<div class="eopt${e===selEmo?' sel':''}" onclick="pe('${e}')">${e}</div>`).join('');document.getElementById('modal').classList.remove('hidden');}
-function closeM(){document.getElementById('modal').classList.add('hidden');}
-function pe(e){selEmo=e;document.querySelectorAll('.eopt').forEach(el=>el.classList.toggle('sel',el.textContent===e));}
-function saveM(){
-  const n=document.getElementById('mname').value.trim();
-  if(!n){document.getElementById('mname').focus();return;}
-  const col=document.getElementById('mcolor').value;
-  const r=parseInt(col.slice(1,3),16),g=parseInt(col.slice(3,5),16),b=parseInt(col.slice(5,7),16);
-  CAT[n]={color:col,bg:`rgba(${r},${g},${b},.12)`,icon:selEmo};
-  KW[n]=[];saveC();closeM();if(allTx.length)render();
+// ── MODAL ───────────────────────────────────────────────────────────────────
+function openM() {
+  selEmo = '🐾';
+  document.getElementById('mname').value  = '';
+  document.getElementById('mcolor').value = '#6c63ff';
+  document.getElementById('egrid').innerHTML = EMOJIS.map(e =>
+    `<div class="eopt${e===selEmo?' sel':''}" onclick="pe('${e}')">${e}</div>`).join('');
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeM() { document.getElementById('modal').classList.add('hidden'); }
+function pe(e) { selEmo = e; document.querySelectorAll('.eopt').forEach(el => el.classList.toggle('sel', el.textContent === e)); }
+function saveM() {
+  const n = document.getElementById('mname').value.trim();
+  if (!n) { document.getElementById('mname').focus(); return; }
+  const col = document.getElementById('mcolor').value;
+  const r = parseInt(col.slice(1,3),16), g = parseInt(col.slice(3,5),16), b = parseInt(col.slice(5,7),16);
+  CAT[n] = {color:col, bg:`rgba(${r},${g},${b},.12)`, icon:selEmo};
+  KW[n]  = [];
+  saveC(); closeM();
+  if (allTx.length) render();
 }
 
-// UTILS
-function mk(d){if(!d)return'unknown';const p=d.split('/');return p.length===3?`${p[2]}-${p[1]}`:d.substring(0,7);}
-function ml(k){if(k==='all')return'Todos';const M=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];const[y,m]=k.split('-');return`${M[+m]} ${y}`;}
-function fmt(n){return n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+'€';}
-function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
-function ds(txs){const d=txs.map(t=>t.date).filter(Boolean).sort();if(!d.length)return 30;const p1=pd(d[0]),p2=pd(d[d.length-1]);return Math.max(Math.abs(p2-p1)/86400000,1);}
-function pd(s){const p=s.split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):new Date(s);}
+// ── UTILS ───────────────────────────────────────────────────────────────────
+function mk(d) { if (!d) return 'unknown'; const p = d.split('/'); return p.length===3 ? `${p[2]}-${p[1]}` : d.substring(0,7); }
+function ml(k) { if (k==='all') return 'Todos'; const M=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; const [y,m]=k.split('-'); return `${M[+m]} ${y}`; }
+function fmt(n) { return n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '€'; }
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function dayspan(txs) { const d=txs.map(t=>t.date).filter(Boolean).sort(); if(!d.length)return 30; const p1=pd(d[0]),p2=pd(d[d.length-1]); return Math.max(Math.abs(p2-p1)/86400000,1); }
+function pd(s) { const p=s.split('/'); return p.length===3 ? new Date(+p[2],+p[1]-1,+p[0]) : new Date(s); }
 </script>
 </body>
 </html>
