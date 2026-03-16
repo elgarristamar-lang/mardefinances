@@ -148,23 +148,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-he
   <div class="upload-title">Analiza tus gastos</div>
   <div class="upload-sub">Sube tus extractos BBVA y la IA clasificará tus gastos automáticamente</div>
   <div class="upload-grid">
-    <div class="uzone" id="z1">
+    <label class="uzone" id="z1" for="fi1">
       <div class="uz-chk" id="ck1">✓</div>
       <div class="uz-ico">💳</div>
       <div class="uz-lbl">Cuenta corriente</div>
       <div class="uz-sub">Gastos, pagos, bizum</div>
       <div class="uz-fn" id="fn1"></div>
-    </div>
-    <div class="uzone" id="z2">
+      <input type="file" id="fi1" class="file-inp" accept=".xlsx,.xls"/>
+    </label>
+    <label class="uzone" id="z2" for="fi2">
       <div class="uz-chk" id="ck2">✓</div>
       <div class="uz-ico">🏦</div>
       <div class="uz-lbl">Cuenta ahorro / nómina</div>
       <div class="uz-sub">Ingresos, nómina</div>
       <div class="uz-fn" id="fn2"></div>
-    </div>
+      <input type="file" id="fi2" class="file-inp" accept=".xlsx,.xls"/>
+    </label>
   </div>
-  <input type="file" id="fi1" class="file-inp" accept=".xlsx,.xls"/>
-  <input type="file" id="fi2" class="file-inp" accept=".xlsx,.xls"/>
   <div class="api-block">
     <div class="api-hdr">
       <span>Clave API Anthropic — clasificación con IA (opcional)</span>
@@ -327,38 +327,45 @@ const EMOJIS=['🐾','🚀','🎮','🎵','🍕','🏖️','✈️','🎁','💻
 let selEmo='🐾';
 
 // FILE UPLOAD — clean approach, no label conflicts
-function setupZone(zid,fid,ckid,fnid,slot){
-  const z=document.getElementById(zid);
-  const fi=document.getElementById(fid);
-  z.addEventListener('click',()=>fi.click());
-  fi.addEventListener('change',()=>{
-    const f=fi.files[0];
-    if(!f)return;
-    const rd=new FileReader();
-    rd.onload=ev=>{
-      if(slot===1)f1=new Uint8Array(ev.target.result);
-      else f2=new Uint8Array(ev.target.result);
-      document.getElementById(fnid).textContent=f.name;
-      z.classList.add('done');
-      document.getElementById(ckid).style.display='flex';
-      document.getElementById('abtn').disabled=!f1&&!f2;
-    };
-    rd.onerror=()=>alert('Error leyendo fichero');
-    rd.readAsArrayBuffer(f);
+function setupZone(zid, fid, ckid, fnid, slot) {
+  const z  = document.getElementById(zid);
+  const fi = document.getElementById(fid);
+
+  // File chosen via native label click
+  fi.addEventListener('change', () => {
+    const f = fi.files[0];
+    if (!f) return;
+    loadFile(f, slot, fnid, ckid, zid);
   });
-  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag');});
-  z.addEventListener('dragleave',()=>z.classList.remove('drag'));
-  z.addEventListener('drop',e=>{
-    e.preventDefault();z.classList.remove('drag');
-    const f=e.dataTransfer.files[0];
-    if(!f)return;
-    // Simulate file selection
-    const dt=new DataTransfer();dt.items.add(f);fi.files=dt.files;
-    fi.dispatchEvent(new Event('change'));
+
+  // Drag & drop onto the label
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag'));
+  z.addEventListener('drop', e => {
+    e.preventDefault();
+    z.classList.remove('drag');
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    loadFile(f, slot, fnid, ckid, zid);
   });
 }
-setupZone('z1','fi1','ck1','fn1',1);
-setupZone('z2','fi2','ck2','fn2',2);
+
+function loadFile(file, slot, fnid, ckid, zid) {
+  const rd = new FileReader();
+  rd.onload = ev => {
+    if (slot === 1) f1 = new Uint8Array(ev.target.result);
+    else            f2 = new Uint8Array(ev.target.result);
+    document.getElementById(fnid).textContent = file.name;
+    document.getElementById(zid).classList.add('done');
+    document.getElementById(ckid).style.display = 'flex';
+    document.getElementById('abtn').disabled = !f1 && !f2;
+  };
+  rd.onerror = () => alert('Error leyendo el fichero. Inténtalo de nuevo.');
+  rd.readAsArrayBuffer(file);
+}
+
+setupZone('z1', 'fi1', 'ck1', 'fn1', 1);
+setupZone('z2', 'fi2', 'ck2', 'fn2', 2);
 
 // STEPS
 function setStep(n){
